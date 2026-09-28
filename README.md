@@ -24,9 +24,12 @@ entries because the host installs from the source archive.
 
 House rules can disable specials or setup, change burn turns, enable 7-or-lower,
 allow chance draws, or forbid finishing on 2/10/ace. Changes apply to the next deal.
-Settings, mute and results stay on this device. Bots use visible information and
-human-style tactics, including same-turn finishes and avoiding repeated exchanges;
-they are not claimed to be optimal or unbeatable.
+Settings, mute and results stay on this device. Bots come in five capability
+levels (1 By the book … 5 Perfect human), one setting for the whole table: shedding
+fundamentals, denial of players about to go out, safe-flip endgame pipelines, and —
+at level 5 — full card counting from public information with cooperation that trusts
+defenders until they waste a block. The ladder was tuned and verified by seeded
+self-play simulation (`npm run bench:bots`); see docs/decomposition/bot-ladder-data.md.
 
 ## Controls
 
@@ -46,6 +49,7 @@ npm run dev:web
 npm run verify
 npx playwright install chromium
 npm run test:browser
+npm run bench:bots   # bot ladder tournament (seeded, deterministic)
 ```
 
 The preview is at `http://localhost:5176/dev/`. `?build=production` loads the built

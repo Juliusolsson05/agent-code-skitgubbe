@@ -1,5 +1,5 @@
 import { d as r } from "./runtime-XLX8az2X.js";
-import { k as a, j as s, l as u, G as c, g as m } from "./styles-D3XmAvgX.js";
+import { k as a, j as s, l as u, G as c, g as m } from "./styles-CCgV-JYk.js";
 const i = "agent-code-skitgubbe-styles";
 function w() {
   if (document.getElementById(i)) return;

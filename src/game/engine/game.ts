@@ -34,6 +34,7 @@ export type Player = {
 
 export type GameEvent =
   | { type: 'stack'; player: number; card: Card }
+  | { type: 'swap'; player: number; faceUp: Card; toHand: Card[] }
   | { type: 'play'; player: number; cards: Card[]; source: Source }
   | { type: 'flip'; player: number; card: Card; ok: boolean }
   | { type: 'chance'; player: number; card: Card; ok: boolean }
@@ -250,6 +251,10 @@ export class SkitgubbeGame {
       for (const c of group) delete player.upSlots[c.id]
       player.up.splice(Math.min(u, player.up.length), 0, card)
       player.upSlots[card.id] = slot
+      // Setup swaps are public at a real table: everyone sees the card laid down and
+      // knows the replaced group went into that hand. Perfect-human bots track exactly
+      // this, so the engine announces it like any other public action.
+      this.events.push({ type: 'swap', player: p, faceUp: card, toHand: group })
     }
     return true
   }
