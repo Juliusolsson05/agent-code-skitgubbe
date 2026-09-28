@@ -119,6 +119,7 @@ try {
   // A swap through the real card controls, then play the whole game with keys. Home
   // starts each scan: repeatedly pressing Right at the last card cannot reach an
   // earlier legal card (the old probe incorrectly called that a game stall).
+  console.log('BEGIN full keyboard game')
   const firstHand = page.locator('.sg-hand .sg-card').first()
   await firstHand.focus()
   await page.keyboard.press('Enter')
@@ -126,6 +127,7 @@ try {
   await page.keyboard.press('Enter')
   await settled()
   await page.getByRole('button', { name: 'Start the game', exact: true }).click()
+  console.log('STARTED full keyboard game')
   let turns = 0
   const deadline = Date.now() + 180000
   while (await page.locator('.sg-root').getAttribute('data-phase') !== 'over') {
@@ -146,6 +148,7 @@ try {
       await page.keyboard.press('Enter')
     } else await page.keyboard.press('t')
     turns++
+    if (turns % 10 === 0) console.log(`Solo progress: ${turns} human turns`)
     await settled()
     if (turns === 5) await shot('playing')
   }
@@ -177,8 +180,18 @@ try {
   await shot('production')
   assert.deepEqual(errors, [])
   console.log('PASS production bundle and no page errors')
+} catch (error) {
+  // Report BEFORE cleanup: a stuck browser/optimizer must not hide the original
+  // failure behind an indefinitely running GitHub step.
+  console.error(error)
+  process.exitCode = 1
 } finally {
-  await context.close()
-  await browser.close()
-  await server.close()
+  const close = Promise.allSettled([context.close(), browser.close(), server.close()])
+  const timer = setTimeout(() => {
+    console.error('Browser acceptance cleanup exceeded 15 seconds')
+    process.exit(1)
+  }, 15000)
+  await close
+  clearTimeout(timer)
 }
+
