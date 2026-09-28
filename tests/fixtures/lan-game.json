@@ -1,0 +1,435 @@
+{
+  "provenance": "Production-engine contract probe, LCG seed 972. Two human seats, no setup swaps. Selection policy mirrors the LAN browser driver: first legal in sorted order, last legal every seventh action, whole-rank plays, first blind flip, pickup before pass.",
+  "deck": [
+    "3S",
+    "10H",
+    "7C",
+    "QC",
+    "5D",
+    "9D",
+    "KS",
+    "2S",
+    "9S",
+    "KH",
+    "JC",
+    "2D",
+    "AS",
+    "6D",
+    "AD",
+    "KC",
+    "10C",
+    "2C",
+    "QH",
+    "8C",
+    "5H",
+    "QS",
+    "4D",
+    "3C",
+    "7S",
+    "2H",
+    "8D",
+    "4C",
+    "3D",
+    "AH",
+    "5C",
+    "10S",
+    "8H",
+    "KD",
+    "5S",
+    "QD",
+    "9H",
+    "JD",
+    "4S",
+    "6S",
+    "4H",
+    "10D",
+    "9C",
+    "6C",
+    "8S",
+    "3H",
+    "7H",
+    "JS",
+    "AC",
+    "6H",
+    "JH",
+    "7D"
+  ],
+  "humanTurns": 42,
+  "trace": [
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KC"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10C"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QH",
+          "QS"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AD",
+          "AS"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8D",
+          "8H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5C",
+          "5S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JD"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QD"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KD"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6C",
+          "6S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9C"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JS"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AC",
+          "AH"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4H",
+          "4S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JH"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JS"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2S",
+          "2D"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KH"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AC",
+          "AH"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "flip",
+        "id": "10H"
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "flip",
+        "id": "QC"
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "flip",
+        "id": "9D"
+      }
+    }
+  ]
+}

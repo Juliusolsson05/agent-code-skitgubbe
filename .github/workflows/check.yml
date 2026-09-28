@@ -6,6 +6,9 @@ permissions:
   contents: read
 jobs:
   verify:
+    # The two-browser LAN acceptance renders two WebGL scenes in software; give the
+    # slowest observed runner room without letting a wedged job hang for 6 hours.
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

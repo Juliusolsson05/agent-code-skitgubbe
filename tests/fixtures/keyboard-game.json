@@ -1,0 +1,635 @@
+{
+  "provenance": "Recorded contract probe from the production engine, LCG seed 1. Human uses the browser driver’s lowest-legal-single strategy after its setup swap; opponents use the production bots.",
+  "deck": [
+    "JH",
+    "6S",
+    "KD",
+    "7C",
+    "6C",
+    "5D",
+    "2H",
+    "7S",
+    "10H",
+    "3S",
+    "4C",
+    "JC",
+    "5H",
+    "AC",
+    "3H",
+    "9S",
+    "KH",
+    "2D",
+    "KC",
+    "9D",
+    "5C",
+    "9H",
+    "AD",
+    "7D",
+    "4D",
+    "4H",
+    "8H",
+    "8C",
+    "JS",
+    "10C",
+    "5S",
+    "8S",
+    "3C",
+    "2C",
+    "KS",
+    "6D",
+    "QD",
+    "10S",
+    "8D",
+    "QH",
+    "9C",
+    "QS",
+    "3D",
+    "2S",
+    "QC",
+    "JD",
+    "6H",
+    "4S",
+    "10D",
+    "AH",
+    "7H",
+    "AS"
+  ],
+  "humanTurns": 19,
+  "trace": [
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3H"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9H"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QD"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QH"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4H"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8H",
+          "8D"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10S"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4D"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QS",
+          "QC"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "chance"
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10D"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7H"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JD"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2S"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8C",
+          "8S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AC",
+          "AH"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9S",
+          "9D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2C",
+          "2D"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "flip",
+        "id": "6S"
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7D",
+          "7H"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "flip",
+        "id": "7C"
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JS"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "flip",
+        "id": "5D"
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JD"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "flip",
+        "id": "7S"
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "flip",
+        "id": "3S"
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3D"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7D",
+          "7H",
+          "7C",
+          "7S"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6D"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8C",
+          "8S"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JS",
+          "JD"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QD"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AC",
+          "AH"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6H"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "flip",
+        "id": "JC"
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5D"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JD"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2S"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9C"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JS"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KC",
+          "KS"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AC"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AD"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AH"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "flip",
+        "id": "KD"
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5D"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "flip",
+        "id": "2H"
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "flip",
+        "id": "4C"
+      }
+    }
+  ]
+}

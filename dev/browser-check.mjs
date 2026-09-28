@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { createServer } from 'vite'
 import { chromium } from 'playwright'
 
 // Real controls and rendering: the rules suite cannot catch keyboard focus leaving the
 // hand or a turn beginning while the scene is still busy. Use an isolated browser and
 // server so verification never changes the player's saved settings in the live preview.
+const keyboardFixture = JSON.parse(await readFile(new URL('../tests/fixtures/keyboard-game.json', import.meta.url), 'utf8'))
 const server = await createServer({ configFile: 'vite.dev.config.ts', cacheDir: 'node_modules/.vite-browser-check', server: { host: '127.0.0.1', port: 0, open: false } })
 await server.listen()
 const base = server.resolvedUrls.local[0]
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || undefined, args: ['--mute-audio'] })
-const context = await browser.newContext({ viewport: { width: 1440, height: 1050 }, reducedMotion: 'reduce' })
+const context = await browser.newContext({ viewport: { width: 1440, height: 1050 }, deviceScaleFactor: process.env.CI ? 0.5 : 1, reducedMotion: 'reduce' })
 const page = await context.newPage()
 page.setDefaultTimeout(30000)
 // Observe the actual scene entry point without exposing a test API in the product.
@@ -31,7 +32,8 @@ await page.route('**/src/game/engine/game.ts*', async route => {
     const ids = ${JSON.stringify(prefix)};
     options = { ...options, deck: [...ids.map(id => newDeck().find(c => c.id === id)), ...newDeck().filter(c => !ids.includes(c.id))] };
   }`
-  let body = (await response.text()).replace('constructor(options = {}) {', injected)
+  const recorded = ` if (location.search.includes('keyboard-fixture')) { const ids = ${JSON.stringify(keyboardFixture.deck)}; options = { ...options, deck: ids.map(id => newDeck().find(c => c.id === id)) }; }`
+  let body = (await response.text()).replace('constructor(options = {}) {', injected + recorded)
   body = body.replace('if (!this.rules.swapPhase) this.startPlay();', `if (!this.rules.swapPhase) this.startPlay();
     if (location.search.includes('large-hand')) { const ids = newDeck().map(c=>c.id); this.setup({players:[{hand:ids.slice(0,40)},{hand:ids.slice(40)}]}); }
     if (location.search.includes('blind-receipt')) this.setup({players:[{down:['3S']},{hand:['AS']}],pile:['KH']});`)
@@ -113,12 +115,18 @@ try {
   assert.deepEqual(receipts,[{ids:['KH','3S'],source:'pile'}], 'failed blind card arrives exactly once, from the pile')
   console.log('PASS large-hand layers and failed-blind single receipt')
   await page.evaluate(() => localStorage.setItem('skitgubbe-dev:skitgubbe.settings', JSON.stringify({ players: 4 })))
-  await page.goto(`${base}dev/`)
+  await page.goto(`${base}dev/?keyboard-fixture`)
   await settled()
+
+  // The earlier blind-card scenario can finish before navigation on slower runners.
+  // Records deliberately survive navigation, so verify one NEW result rather than
+  // assuming no earlier scenario has saved a game (CI recorded two, correctly).
+  const gamesBefore = await page.evaluate(() => JSON.parse(localStorage.getItem('skitgubbe-dev:skitgubbe.records') || '{}').games || 0)
 
   // A swap through the real card controls, then play the whole game with keys. Home
   // starts each scan: repeatedly pressing Right at the last card cannot reach an
   // earlier legal card (the old probe incorrectly called that a game stall).
+  console.log('BEGIN full keyboard game')
   const firstHand = page.locator('.sg-hand .sg-card').first()
   await firstHand.focus()
   await page.keyboard.press('Enter')
@@ -126,10 +134,15 @@ try {
   await page.keyboard.press('Enter')
   await settled()
   await page.getByRole('button', { name: 'Start the game', exact: true }).click()
+  console.log('STARTED full keyboard game')
   let turns = 0
-  const deadline = Date.now() + 180000
+  // Hosted runners rasterize Three.js in software. Recorded Linux run spent
+  // 164s on three static layouts and 126s on two setups; its 180s game budget
+  // expired while the same keyboard playthrough passed on native Chrome.
+  // Keep all completion/legality assertions, but bound CI by ten minutes.
+  const deadline = Date.now() + (process.env.CI ? 600000 : 180000)
   while (await page.locator('.sg-root').getAttribute('data-phase') !== 'over') {
-    assert.ok(Date.now() < deadline, 'game completes without stalling')
+    assert.ok(Date.now() < deadline, 'keyboard game exceeded its acceptance time budget')
     await settled()
     if (await page.locator('.sg-root').getAttribute('data-turn') !== 'you') {
       await page.waitForTimeout(100)
@@ -146,13 +159,14 @@ try {
       await page.keyboard.press('Enter')
     } else await page.keyboard.press('t')
     turns++
+    if (turns % 10 === 0) console.log(`Solo progress: ${turns} human turns`)
     await settled()
     if (turns === 5) await shot('playing')
   }
   await settled()
   await shot('result')
-  assert.ok(turns > 0)
-  assert.match(await page.locator('.sg-record').innerText(), /of 1/)
+  assert.equal(turns, keyboardFixture.humanTurns, 'keyboard replay matches the recorded production-engine game')
+  assert.match(await page.locator('.sg-record').innerText(), new RegExp(`of ${gamesBefore + 1}(?:,|$)`))
   console.log(`PASS complete game: ${turns} human turns by keyboard, bots and result`)
 
   // Rules and records survive a reload. Escape closes the dialog and restores focus.
@@ -177,8 +191,18 @@ try {
   await shot('production')
   assert.deepEqual(errors, [])
   console.log('PASS production bundle and no page errors')
+} catch (error) {
+  // Report BEFORE cleanup: a stuck browser/optimizer must not hide the original
+  // failure behind an indefinitely running GitHub step.
+  console.error(error)
+  process.exitCode = 1
 } finally {
-  await context.close()
-  await browser.close()
-  await server.close()
+  const close = Promise.allSettled([context.close(), browser.close(), server.close()])
+  const timer = setTimeout(() => {
+    console.error('Browser acceptance cleanup exceeded 15 seconds')
+    process.exit(1)
+  }, 15000)
+  await close
+  clearTimeout(timer)
 }
+
