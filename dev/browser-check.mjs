@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { createServer } from 'vite'
 import { chromium } from 'playwright'
 
 // Real controls and rendering: the rules suite cannot catch keyboard focus leaving the
 // hand or a turn beginning while the scene is still busy. Use an isolated browser and
 // server so verification never changes the player's saved settings in the live preview.
+const keyboardFixture = JSON.parse(await readFile(new URL('../tests/fixtures/keyboard-game.json', import.meta.url), 'utf8'))
 const server = await createServer({ configFile: 'vite.dev.config.ts', cacheDir: 'node_modules/.vite-browser-check', server: { host: '127.0.0.1', port: 0, open: false } })
 await server.listen()
 const base = server.resolvedUrls.local[0]
@@ -31,7 +32,8 @@ await page.route('**/src/game/engine/game.ts*', async route => {
     const ids = ${JSON.stringify(prefix)};
     options = { ...options, deck: [...ids.map(id => newDeck().find(c => c.id === id)), ...newDeck().filter(c => !ids.includes(c.id))] };
   }`
-  let body = (await response.text()).replace('constructor(options = {}) {', injected)
+  const recorded = ` if (location.search.includes('keyboard-fixture')) { const ids = ${JSON.stringify(keyboardFixture.deck)}; options = { ...options, deck: ids.map(id => newDeck().find(c => c.id === id)) }; }`
+  let body = (await response.text()).replace('constructor(options = {}) {', injected + recorded)
   body = body.replace('if (!this.rules.swapPhase) this.startPlay();', `if (!this.rules.swapPhase) this.startPlay();
     if (location.search.includes('large-hand')) { const ids = newDeck().map(c=>c.id); this.setup({players:[{hand:ids.slice(0,40)},{hand:ids.slice(40)}]}); }
     if (location.search.includes('blind-receipt')) this.setup({players:[{down:['3S']},{hand:['AS']}],pile:['KH']});`)
@@ -113,7 +115,7 @@ try {
   assert.deepEqual(receipts,[{ids:['KH','3S'],source:'pile'}], 'failed blind card arrives exactly once, from the pile')
   console.log('PASS large-hand layers and failed-blind single receipt')
   await page.evaluate(() => localStorage.setItem('skitgubbe-dev:skitgubbe.settings', JSON.stringify({ players: 4 })))
-  await page.goto(`${base}dev/`)
+  await page.goto(`${base}dev/?keyboard-fixture`)
   await settled()
 
   // A swap through the real card controls, then play the whole game with keys. Home
@@ -158,7 +160,7 @@ try {
   }
   await settled()
   await shot('result')
-  assert.ok(turns > 0)
+  assert.equal(turns, keyboardFixture.humanTurns, 'keyboard replay matches the recorded production-engine game')
   assert.match(await page.locator('.sg-record').innerText(), /of 1/)
   console.log(`PASS complete game: ${turns} human turns by keyboard, bots and result`)
 

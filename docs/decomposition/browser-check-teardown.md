@@ -31,3 +31,18 @@ CI keeps the 1440x1050 CSS viewport but uses deviceScaleFactor0.5 to reduce rast
 work, and a ten-minute full-game budget. Every behavioral assertion is unchanged;
 this is not a product speed guarantee or a waived game-completion requirement.
 Local screenshots remain full resolution. Progress now prints every ten moves.
+
+The local CI-density probe also produced more than 200 human attempts with a
+random deal. A random human lowest-single policy can legitimately keep collecting
+piles; its duration is not a rule invariant. Record a deterministic contract game
+from the production engine instead: tests/fixtures/keyboard-game.json, LCG seed1,
+66 total moves and19 human moves. It uses the same setup swap and lowest-single
+policy as the keyboard driver, and real production bots for opponents. Replay
+that deal through UI and assert the exact19 human actions and terminal result.
+This preserves the complete-game assertion and makes a wrong/ignored keyboard
+action distinguishable from a long randomly dealt game. Other layout games remain
+random; pure engine/bot seed sweeps still cover many games.
+The recorded deal replay passed in native Chrome with exactly19 human actions,
+matching the engine recording, plus all layout/settings/production assertions.
+The CI density/budget fix's first run has already passed its solo browser stage;
+final acceptance now uses the bounded recorded deal for reproducibility.
