@@ -46,3 +46,9 @@ The recorded deal replay passed in native Chrome with exactly19 human actions,
 matching the engine recording, plus all layout/settings/production assertions.
 The CI density/budget fix's first run has already passed its solo browser stage;
 final acceptance now uses the bounded recorded deal for reproducibility.
+
+Run36368213334 completed gameplay but failed the record assertion: actual
+"0 won of 2, skitgubbe 2 times", expected /of 1/. The preceding blind-receipt
+scenario can complete and persist a result before navigation on slower runners.
+The keyboard scenario now captures its starting record and verifies exactly one
+additional completed game, preserving persistence and duplicate-result detection.

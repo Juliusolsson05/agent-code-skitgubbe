@@ -118,6 +118,11 @@ try {
   await page.goto(`${base}dev/?keyboard-fixture`)
   await settled()
 
+  // The earlier blind-card scenario can finish before navigation on slower runners.
+  // Records deliberately survive navigation, so verify one NEW result rather than
+  // assuming no earlier scenario has saved a game (CI recorded two, correctly).
+  const gamesBefore = await page.evaluate(() => JSON.parse(localStorage.getItem('skitgubbe-dev:skitgubbe.records') || '{}').games || 0)
+
   // A swap through the real card controls, then play the whole game with keys. Home
   // starts each scan: repeatedly pressing Right at the last card cannot reach an
   // earlier legal card (the old probe incorrectly called that a game stall).
@@ -161,7 +166,7 @@ try {
   await settled()
   await shot('result')
   assert.equal(turns, keyboardFixture.humanTurns, 'keyboard replay matches the recorded production-engine game')
-  assert.match(await page.locator('.sg-record').innerText(), /of 1/)
+  assert.match(await page.locator('.sg-record').innerText(), new RegExp(`of ${gamesBefore + 1}(?:,|$)`))
   console.log(`PASS complete game: ${turns} human turns by keyboard, bots and result`)
 
   // Rules and records survive a reload. Escape closes the dialog and restores focus.
