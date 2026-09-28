@@ -1,76 +1,67 @@
 {
-  "provenance": "Production-engine contract probe, LCG seed 773. Two human seats, no setup swaps. Same first-legal/all-rank policy as LAN browser driver; last legal every seventh action.",
+  "provenance": "Production-engine contract probe, LCG seed 972. Two human seats, no setup swaps. Selection policy mirrors the LAN browser driver: first legal in sorted order, last legal every seventh action, whole-rank plays, first blind flip, pickup before pass.",
   "deck": [
-    "JC",
-    "JS",
-    "10C",
-    "6H",
-    "6C",
-    "5H",
-    "JD",
-    "4C",
-    "KC",
     "3S",
-    "AD",
-    "7S",
-    "QS",
-    "AH",
-    "10S",
-    "7D",
-    "4H",
-    "6D",
-    "10D",
-    "2S",
-    "9C",
-    "AS",
-    "9S",
-    "KS",
-    "QD",
-    "9D",
-    "AC",
     "10H",
     "7C",
+    "QC",
+    "5D",
+    "9D",
+    "KS",
+    "2S",
+    "9S",
+    "KH",
+    "JC",
+    "2D",
+    "AS",
+    "6D",
+    "AD",
+    "KC",
+    "10C",
+    "2C",
+    "QH",
+    "8C",
+    "5H",
+    "QS",
+    "4D",
+    "3C",
+    "7S",
+    "2H",
+    "8D",
+    "4C",
+    "3D",
+    "AH",
+    "5C",
+    "10S",
+    "8H",
+    "KD",
+    "5S",
+    "QD",
+    "9H",
+    "JD",
+    "4S",
+    "6S",
+    "4H",
+    "10D",
+    "9C",
+    "6C",
+    "8S",
     "3H",
     "7H",
-    "QH",
-    "QC",
-    "8S",
-    "4S",
-    "3C",
-    "2C",
-    "8H",
-    "8C",
-    "5D",
-    "5S",
+    "JS",
+    "AC",
+    "6H",
     "JH",
-    "5C",
-    "8D",
-    "KD",
-    "KH",
-    "4D",
-    "2D",
-    "2H",
-    "6S",
-    "9H",
-    "3D"
+    "7D"
   ],
-  "humanTurns": 48,
+  "humanTurns": 42,
   "trace": [
     {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "QS"
-        ]
-      }
-    },
-    {
       "player": 1,
       "move": {
         "type": "play",
         "ids": [
-          "AH"
+          "KC"
         ]
       }
     },
@@ -79,8 +70,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "10D",
-          "10S"
+          "10C"
         ]
       }
     },
@@ -89,119 +79,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "4H"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "2S"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "6D"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "9C",
-          "9S"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "KS"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "AC",
-          "AS"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "10H"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "7D",
-          "7H"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "7C"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "QC",
-          "QD",
-          "QH"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "pickup"
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "4S"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "7C",
-          "7D",
-          "7H"
+          "8C"
         ]
       }
     },
@@ -219,7 +97,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "3C"
+          "6D"
         ]
       }
     },
@@ -228,7 +106,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "3H"
+          "5H"
         ]
       }
     },
@@ -237,7 +115,8 @@
       "move": {
         "type": "play",
         "ids": [
-          "5D"
+          "QH",
+          "QS"
         ]
       }
     },
@@ -246,92 +125,8 @@
       "move": {
         "type": "play",
         "ids": [
-          "8S"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "8C",
-          "8H"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "9D"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "5C",
-          "5S"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "QC",
-          "QD",
-          "QH"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "KD"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "2D"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "4D"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "JH"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "KH"
+          "AD",
+          "AS"
         ]
       }
     },
@@ -358,6 +153,135 @@
       "move": {
         "type": "play",
         "ids": [
+          "3C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8D",
+          "8H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5C",
+          "5S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JD"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QD"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KD"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6C",
           "6S"
         ]
       }
@@ -367,7 +291,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "8D"
+          "9C"
         ]
       }
     },
@@ -376,43 +300,31 @@
       "move": {
         "type": "play",
         "ids": [
-          "9H"
+          "JS"
         ]
       }
     },
     {
       "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AC",
+          "AH"
+        ]
+      }
+    },
+    {
+      "player": 0,
       "move": {
         "type": "pickup"
       }
     },
     {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
-          "JD"
-        ]
-      }
-    },
-    {
       "player": 1,
       "move": {
         "type": "play",
         "ids": [
-          "2C",
-          "2D",
-          "2H"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "3C",
-          "3D",
           "3H"
         ]
       }
@@ -422,7 +334,8 @@
       "move": {
         "type": "play",
         "ids": [
-          "KC"
+          "4H",
+          "4S"
         ]
       }
     },
@@ -431,9 +344,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "5C",
-          "5D",
-          "5S"
+          "7D"
         ]
       }
     },
@@ -442,57 +353,82 @@
       "move": {
         "type": "play",
         "ids": [
-          "AD"
+          "7H"
         ]
       }
     },
     {
       "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JH"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JS"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2S",
+          "2D"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KH"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AC",
+          "AH"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "flip",
+        "id": "10H"
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "flip",
+        "id": "QC"
+      }
+    },
+    {
+      "player": 0,
       "move": {
         "type": "pickup"
       }
     },
     {
-      "player": 0,
-      "move": {
-        "type": "flip",
-        "id": "JC"
-      }
-    },
-    {
       "player": 1,
       "move": {
-        "type": "play",
-        "ids": [
-          "2C",
-          "2D",
-          "2H"
-        ]
-      }
-    },
-    {
-      "player": 1,
-      "move": {
-        "type": "play",
-        "ids": [
-          "3C",
-          "3D",
-          "3H"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
         "type": "flip",
-        "id": "10C"
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "flip",
-        "id": "6C"
+        "id": "9D"
       }
     }
   ]

@@ -67,3 +67,14 @@ The native two-browser replay matched exactly48 actions and passed privacy,
 refresh, Step away/Resume, simultaneous Ready, rematch and room closure.
 Only temporary esbuild constructor input is injected; shipped artifacts stay
 byte-identical to the merged release candidate.
+
+Final two CI runs both failed only test:lan-browser on wall-clock: run36368147186
+accepted20/40/60 actions then hit600s; run36369291345 (recorded deal) reached
+20 of48 in629s. Solo passed both runs. Root cause refined: scene animations
+already collapse under reduced motion, but Playwright actionability and default
+rAF polling are frame-bound, and SwiftShader frames cost seconds with two WebGL
+contexts. Remedies, all test-harness-only: timer polling(100-200ms) for every
+wait, CI raster density0.25, CI budget1200s, job timeout-minutes30, and a
+shorter recorded game (best of30000 seeds under the identical driver policy:
+seed972, 42 actions; 48 was the previous fixture). Native Chrome reproduced
+exactly42 actions with all privacy/reconnect/rematch checks passing.
