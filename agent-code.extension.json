@@ -1,0 +1,37 @@
+{
+  "id": "skitgubbe",
+  "name": "Skitgubbe",
+  "description": "Skitgubbe, the Swedish shedding card game, against computer players on a 3D table.",
+  "version": "0.1.0",
+  "apiVersion": 2,
+  "entry": "dist/runtime.js",
+  "activationEvents": [
+    "onView:skitgubbe.play"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "id": "skitgubbe.play",
+        "title": "Play Skitgubbe",
+        "keywords": [
+          "skitgubbe",
+          "shithead",
+          "vändtia",
+          "cards",
+          "card game",
+          "game",
+          "play",
+          "break"
+        ]
+      }
+    ],
+    "views": [
+      {
+        "id": "skitgubbe.play",
+        "title": "Skitgubbe",
+        "mount": "modal",
+        "entry": "dist/view.js"
+      }
+    ]
+  }
+}

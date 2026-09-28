@@ -8,13 +8,13 @@ Skitgubbe, the Swedish family shedding game, as a standalone Agent Code extensio
 
 What the owner said (2026-09-27):
 - Skitgubbe is the "shithead" family game: face-down, face-up and hand cards, play equal or higher, a 10 clears the pile.
-- Add an "invisible 5": anything may be played on a 5.
+- Add an "invisible 5". Clarified mid-build: a 5 can be played on anything and is see-through. The next player plays on whatever lies under it ("if we have a king on the board, I lay a 5, next person plays on king").
 - Make it its own repo, because it is niche.
 - Rules configurable in settings.
 - "Make it as blackjack, with some great animations."
 
 What I assumed (all **UNCONFIRMED**; the owner said "do the full thing" without answering the decision list):
-- U1. The 5 is played by its normal value (it must be equal or higher than the pile), and anything may be played on it. The classic see-through 5 is offered as a settings option, not the default.
+- ~~U1~~ CONFIRMED by the owner: the invisible 5 above is the default. The setting is a single on/off; off makes 5 an ordinary card. My earlier reading ("anything goes on a 5, the 5 itself plays normally") was wrong and is not offered.
 - U2. Defaults: 2 resets, 10 burns, four of a kind burns, a burn lets the same player play again, the swap phase is on, the chance card is on. "No finishing on 2/10/A" and "7 or lower" are off.
 - U3. The player holding the lowest ordinary card starts; ties go to the earliest seat, counting from you. After a pickup, the next player starts a fresh pile.
 - U4. You plus 2 bots by default, adjustable from 1 to 3. There is one bot strategy.
@@ -55,8 +55,8 @@ dev/                       harness, test runner, browser check
 
 ### Engine contract (`src/game/engine`)
 
-- `Rules`: `{ five: 'anything' | 'invisible' | 'off', twoResets, tenBurns, fourBurns, burnPlaysAgain, swapPhase, chanceCard, noSpecialFinish, sevenOrLower }` plus `DEFAULT_RULES` and `parseRules(unknown)`.
-- `canPlayOn(rank, pile, rules)` decides legality. The effective top skips see-through 5s in `invisible` mode. Resets: an empty pile, a 2 (when `twoResets`), or a 5 in `anything` mode. With `sevenOrLower`, a 7 requires a rank of 7 or lower. The wildcards are 2 (when `twoResets`), 10 (when `tenBurns`), and 5 in `invisible` mode.
+- `Rules`: `{ invisibleFive, twoResets, tenBurns, fourBurns, burnPlaysAgain, swapPhase, chanceCard, noSpecialFinish, sevenOrLower }` plus `DEFAULT_RULES` and `parseRules(unknown)`.
+- `canPlayOn(rank, pile, rules)` decides legality. The effective top skips see-through 5s when `invisibleFive` is on. Resets: an empty pile, or a 2 (when `twoResets`). With `sevenOrLower`, a 7 requires a rank of 7 or lower. The wildcards are 2 (when `twoResets`), 10 (when `tenBurns`), and 5 (when `invisibleFive`).
 - `SkitgubbeGame(options: { players: 2..4, rules, random })`:
   - phases: `swap`, then `playing`, then `over`
   - actions: `swap(p, handId, upId)`, `ready(p)`, `play(p, cardIds)`, `flip(p, downId)`, `chance(p)`, `pickUp(p)`; each returns a boolean and never throws
@@ -92,7 +92,7 @@ Adapted from Blackjack: world, camera, lighting, room, materials, animation, car
 ## Tests
 
 Engine tests use seeded or constructed hands, not literals invented to pass. Each test names the rule it protects:
-- legality for every rule option: the 5 in all three modes, 2, 10, 7-or-lower
+- legality for every rule option: the invisible 5 on and off (including a 5 on a King, then a card that has to beat the King), 2, 10, 7-or-lower
 - four-of-a-kind burn across players, and burn-plays-again on and off
 - drawing back to 3 while the draw pile lasts, and multi-card plays
 - source order (hand, then face-up, then face-down), blind flip success and failure

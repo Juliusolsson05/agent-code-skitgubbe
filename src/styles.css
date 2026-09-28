@@ -1,0 +1,32 @@
+/* The frame around the game. Theme tokens bind to the host's --theme-* variables with
+ * literal fallbacks, exactly as Mini Games does: the host pushes the full set into the
+ * frame on load and on every theme change, and the fallbacks exist only so the browser
+ * dev harness renders something coherent. The felt and cards are ARTWORK and never
+ * inherit the theme. */
+.sg-frame {
+  --bg: var(--theme-canvas, #0f1216);
+  --s1: var(--theme-surface, #171b21);
+  --s2: var(--theme-surface-hi, #1f242c);
+  --border: var(--theme-border, rgba(255, 255, 255, 0.09));
+  --border-hi: var(--theme-border-hi, rgba(255, 255, 255, 0.2));
+  --ink: var(--theme-ink, #e9edf2);
+  --muted: var(--theme-muted, #9aa4b2);
+  --gold: var(--theme-accent, #e3c56f);
+  --gold-soft: var(--theme-accent-soft, rgba(227, 197, 111, 0.18));
+  --gold-ink: var(--theme-accent-fg, #1a1206);
+  --focus: var(--theme-focus-ring, var(--gold));
+  --code: var(--theme-font-code, ui-monospace, 'SF Mono', Menlo, monospace);
+  /* HUG THE CONTENT. The host sizes the modal from this element's measured width, so a
+   * viewport-relative width here would make our size depend on our own size (Mini
+   * Games learned this the hard way). The game defines its own fixed width. */
+  width: max-content;
+  margin: -1px;
+  padding: 14px;
+  border-radius: inherit;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--theme-app-font, ui-sans-serif, system-ui, -apple-system, sans-serif);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sg-frame, .sg-frame * { box-sizing: border-box; }
