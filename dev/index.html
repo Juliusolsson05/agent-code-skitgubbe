@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Skitgubbe — dev</title>
+    <style>
+      /* Dev-only chrome. The real host mounts the view inside a modal; here it just
+         sits centred on a dark stage so the table reads the same. */
+      html, body { margin: 0; min-height: 100%; background: #0b0c10; }
+      body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+      #app { box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6); border-radius: 14px; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

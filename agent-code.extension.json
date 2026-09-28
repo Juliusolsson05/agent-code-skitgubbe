@@ -1,0 +1,67 @@
+{
+  "id": "skitgubbe",
+  "name": "Skitgubbe",
+  "description": "Skitgubbe on a 3D table, against bots or with friends over LAN.",
+  "version": "0.1.0",
+  "apiVersion": 2,
+  "entry": "dist/runtime.js",
+  "activationEvents": [
+    "onView:skitgubbe.play",
+    "onView:skitgubbe.friends"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "id": "skitgubbe.play",
+        "title": "Play Skitgubbe",
+        "keywords": [
+          "skitgubbe",
+          "shithead",
+          "v\u00e4ndtia",
+          "cards",
+          "card game",
+          "game",
+          "play",
+          "break"
+        ]
+      },
+      {
+        "id": "skitgubbe.friends",
+        "title": "Play Skitgubbe with Friends",
+        "keywords": [
+          "skitgubbe",
+          "friends",
+          "LAN",
+          "multiplayer",
+          "cards"
+        ]
+      }
+    ],
+    "views": [
+      {
+        "id": "skitgubbe.play",
+        "title": "Skitgubbe",
+        "mount": "modal",
+        "entry": "dist/view.js"
+      },
+      {
+        "id": "skitgubbe.friends",
+        "title": "Skitgubbe with Friends",
+        "mount": "modal",
+        "entry": "dist/lanView.js"
+      }
+    ],
+    "services": [
+      {
+        "id": "skitgubbe.lan-host",
+        "entry": "dist-service/service.mjs"
+      }
+    ]
+  },
+  "permissions": [
+    "service.run",
+    "service.transport",
+    "net.listen",
+    "net.connect"
+  ]
+}
