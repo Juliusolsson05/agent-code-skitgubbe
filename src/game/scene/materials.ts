@@ -4,7 +4,7 @@ import type { Rank, Suit } from '../../assets/svg/suits'
 import { cardBackTexture, cardFaceTexture } from './textures/cardTextures'
 import { DEFAULT_RULES } from '../engine/rules'
 import { feltNormalMap, feltTexture } from './textures/felt'
-import { leatherTexture, woodTexture } from './textures/surfaces'
+import { woodTexture } from './textures/surfaces'
 
 // Every material in the scene (spec §8.4). Centralised so geometry files stay about
 // shape and lighting stays about light.
@@ -38,10 +38,12 @@ export function woodMaterial(): THREE.MeshStandardMaterial {
   })
 }
 
+/** The rail is oiled pine, like a Swedish kitchen table, not a casino's leather bumper.
+ *  The wood texture tinted warm and light; the same roughness Blackjack's rail uses. */
 export function railMaterial(): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({
-    map: leatherTexture(),
-    color: 0xffffff,
+    map: woodTexture(),
+    color: 0xd9a26b,
     roughness: 0.45,
     metalness: 0,
     envMapIntensity: 0.7,

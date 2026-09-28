@@ -34,6 +34,7 @@ export default defineConfig({
   ],
   server: {
     port: 5176,
+    watch: { ignored: ['**/lan-dist/**', '**/dist-service/**'] },
     open: '/dev/',
   },
 })

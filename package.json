@@ -5,14 +5,18 @@
   "type": "module",
   "description": "Skitgubbe, the Swedish shedding card game, on a 3D table inside Agent Code.",
   "scripts": {
-    "build": "vite build && tsc --noEmit",
+    "build": "tsc --noEmit && vite build && npm run build:lan && npm run build:service",
     "dev": "vite build --watch",
     "dev:web": "vite --config vite.dev.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "node dev/test.mjs",
     "test:extension": "NODE_ENV=production npm run build && node --test testing/extension-contract.test.mjs",
-    "verify": "npm test && npm run test:extension",
-    "test:browser": "node dev/browser-check.mjs"
+    "verify": "npm run test:extension && npm test",
+    "test:browser": "node dev/browser-check.mjs",
+    "build:lan": "vite build --config vite.lan.config.ts && node dev/build-lan.mjs",
+    "build:service": "esbuild server/service.ts server/main.ts --bundle --platform=node --format=esm --target=node22 --outdir=dist-service --out-extension:.js=.mjs",
+    "lan": "node dist-service/main.mjs --lan",
+    "test:lan-browser": "node dev/lan-browser-check.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -20,11 +24,12 @@
     "three": "^0.169.0"
   },
   "devDependencies": {
+    "@types/node": "^22.20.4",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/three": "^0.169.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "agent-code-extension-api": "git+https://github.com/Juliusolsson05/agent-code-extension-api.git#9c30b9199ccb692de19673baa936e20154578080",
+    "agent-code-extension-api": "github:Juliusolsson05/agent-code-extension-api#v0.9.0",
     "esbuild": "^0.21.5",
     "playwright": "^1.63.0",
     "typescript": "^5.5.0",

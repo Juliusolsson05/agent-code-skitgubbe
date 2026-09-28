@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { newDeck } from '../src/game/engine/cards.ts'
 import { SkitgubbeGame } from '../src/game/engine/game.ts'
+import { applyMove, chooseMove } from '../src/game/bot.ts'
 import { DEFAULT_RULES } from '../src/game/engine/rules.ts'
 
 const rules = patch => ({ ...DEFAULT_RULES, swapPhase: false, ...patch })
@@ -16,14 +18,14 @@ const events = (game, type) => game.takeEvents().filter(e => e.type === type)
 // Opponent padding: cards that keep a seat in the game without mattering to the test.
 const idle = { hand: ['KC', 'KD'], up: ['QC'], down: ['QD'] }
 
-test('a fresh deal gives everyone 3 down, 3 up, 3 in hand; the lowest ordinary hand card starts', () => {
+test('a fresh deal gives everyone 3 down, 3 up, 3 in hand; the lowest hand card starts', () => {
   let s = 1
   const random = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296 }
   const game = new SkitgubbeGame({ players: 4, random, rules: rules() })
   const snap = game.getSnapshot()
   for (const p of snap.players) assert.deepEqual([p.hand.length, p.up.length, p.down.length], [3, 3, 3])
   assert.equal(snap.drawCount, 52 - 36)
-  const lowest = p => Math.min(...p.hand.filter(c => !['2', '5', '10'].includes(c.rank)).map(c => ({ J: 11, Q: 12, K: 13, A: 14 })[c.rank] ?? Number(c.rank)))
+  const lowest = p => Math.min(...p.hand.filter(c => c.rank !== '2').map(c => ({ J: 11, Q: 12, K: 13, A: 14 })[c.rank] ?? Number(c.rank)))
   const best = Math.min(...snap.players.map(lowest))
   assert.equal(snap.current, snap.players.findIndex(p => lowest(p) === best))
 })
@@ -158,7 +160,7 @@ test('going out records the place, and the last player holding cards is the skit
   assert.deepEqual(events(game, 'over').map(e => e.skitgubbe), [1])
 })
 
-test('whole games always end with one skitgubbe and all 52 cards accounted for', () => {
+test('whole bot games end with one skitgubbe and conserve all 52 cards after every action', () => {
   for (let seed = 1; seed <= 60; seed++) {
     let s = seed
     const random = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296 }
@@ -167,12 +169,10 @@ test('whole games always end with one skitgubbe and all 52 cards accounted for',
     let moves = 0
     while (game.getSnapshot().phase === 'playing' && moves++ < 5000) {
       const p = game.getSnapshot().current
-      if (game.source(p) === 'down') game.flip(p, game.getSnapshot().players[p].down[0].id)
-      else {
-        const legal = game.legalCardIds(p)
-        if (legal.length) game.play(p, [legal[0]])
-        else if (!game.pickUp(p)) assert.ok(game.pass(p), 'a player with no move can always pass')
-      }
+      // A first-card-only player can deliberately cycle a pile forever (recorded at
+      // seed 36 after the corrected 2 rule). Drive the actual game strategy while
+      // retaining the per-action conservation and final-result assertions.
+      assert.ok(applyMove(game, p, chooseMove(game, p)))
       assert.equal(total(game.getSnapshot()), 52)
     }
     const snap = game.getSnapshot()
@@ -182,7 +182,7 @@ test('whole games always end with one skitgubbe and all 52 cards accounted for',
 })
 
 test('the swap phase trades hand and face-up cards and play starts when everyone is ready', () => {
-  const game = new SkitgubbeGame({ players: 2, rules: { ...DEFAULT_RULES } })
+  const game = new SkitgubbeGame({ players: 2, deck: newDeck(), rules: { ...DEFAULT_RULES } })
   const before = game.getSnapshot().players[0]
   assert.equal(game.getSnapshot().phase, 'swap')
   assert.equal(game.play(0, [before.hand[0].id]), false)
@@ -205,4 +205,67 @@ test('snapshots are copies', () => {
   snap.pile.push({ id: 'AS', rank: 'A', suit: 'S' })
   assert.equal(game.getSnapshot().players[0].hand.length, 1)
   assert.equal(game.getSnapshot().pile.length, 0)
+})
+
+// Contract probe from the owner's correction: a 2 gives its player the next play,
+// including a low card over a formerly high pile. It is not a gift to the next seat.
+test('a reset 2 keeps the turn and lets that player lay any next card', () => {
+  const game = at({ players: [{ hand: ['2S', '3S', '4S'] }, idle], pile: ['AS'] })
+  assert.equal(game.play(0, ['2S']), true)
+  assert.equal(game.getSnapshot().current, 0)
+  assert.equal(game.play(1, ['KC']), false)
+  assert.equal(game.play(0, ['3S']), true)
+  assert.equal(game.getSnapshot().current, 1)
+  assert.deepEqual(ids(game.getSnapshot().pile), ['AS', '2S', '3S'])
+})
+
+test('ordinary 2 passes the turn; a final reset 2 still finishes its player', () => {
+  const ordinary = at({ players: [{ hand: ['2S', '3S'] }, idle] }, { twoResets: false })
+  ordinary.play(0, ['2S'])
+  assert.equal(ordinary.getSnapshot().current, 1)
+  const finished = at({ players: [{ hand: ['2S'] }, idle, { hand: ['3H'] }], pile: ['AS'] })
+  finished.play(0, ['2S'])
+  assert.equal(finished.getSnapshot().players[0].place, 1)
+  assert.equal(finished.getSnapshot().current, 1)
+})
+
+// Setup contract from the owner's example: hand 8 + table 8 share one face-up
+// position; only the emptied hand slot is replenished. Deal order is a fixed probe.
+test('opening matching cards stack face up and refill the hand without losing a table slot', () => {
+  const deck = ['3S','3H','4S','4H','5S','5H','8S','9S','6S','6H','7S','7H','8H','9H','JS','JH','QS','QH','KS']
+  const used = new Set(deck)
+  const full = [...deck, ...newDeck().map(c => c.id).filter(id => !used.has(id))]
+  const game = new SkitgubbeGame({ players: 2, deck: full.map(id => newDeck().find(c => c.id === id)), rules: { ...DEFAULT_RULES } })
+  const before = game.getSnapshot()
+  assert.equal(game.swap(0, '8H', '8S'), true)
+  const after = game.getSnapshot()
+  assert.equal(after.players[0].up.length, 4)
+  assert.equal(after.players[0].upSlots['8H'], after.players[0].upSlots['8S'])
+  assert.equal(new Set(Object.values(after.players[0].upSlots)).size, 3)
+  assert.equal(after.players[0].hand.length, 3)
+  assert.ok(after.players[0].hand.some(c => c.id === 'KS'))
+  assert.equal(after.drawCount, before.drawCount - 1)
+  assert.equal(total(after), 52)
+  // Swapping that stack for a different rank moves the whole stack, rather than
+  // leaving mixed ranks in one table slot or silently discarding a card.
+  assert.equal(game.swap(0, 'JS', '8S'), true)
+  const swapped = game.getSnapshot().players[0]
+  assert.ok(swapped.hand.some(c => c.id === '8H') && swapped.hand.some(c => c.id === '8S'))
+  assert.equal(swapped.upSlots.JS, 0)
+  assert.equal(total(game.getSnapshot()), 52)
+  game.ready(0)
+  assert.equal(game.swap(0, '8H', 'JS'), false)
+})
+
+
+test('the starter is chosen from final hands after setup and excludes 2', () => {
+  const prefix = ['KS','KH','QS','QH','JS','JH', '2S','3S','8S','8H','9S','9H', '7S','4S','6S','5S','AS','AH']
+  const used = new Set(prefix)
+  const deck = [...prefix, ...newDeck().map(c => c.id).filter(id => !used.has(id))].map(id => newDeck().find(c => c.id === id))
+  const game = new SkitgubbeGame({ players: 2, deck, rules: { ...DEFAULT_RULES } })
+  // Seat 1 holds the low 4. Moving a 2 into seat 0's hand must not steal the start.
+  assert.equal(game.swap(0, '7S', '2S'), true)
+  game.ready(0)
+  game.ready(1)
+  assert.equal(game.getSnapshot().current, 1)
 })

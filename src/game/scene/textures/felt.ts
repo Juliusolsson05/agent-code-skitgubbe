@@ -3,7 +3,7 @@ import * as THREE from 'three'
 
 import { TableLegend } from '../../../assets/svg/TableLegend'
 import type { Rules } from '../../engine/rules'
-import { BURN_POS, DRAW_POS, FELT_D, FELT_W } from '../world'
+import { FELT_D, FELT_W } from '../world'
 import { svgToTexture } from './svgTexture'
 
 // The felt: procedural cloth with the vector legend composited on top. Copied from
@@ -40,9 +40,12 @@ export function feltCanvasY(worldZ: number): number {
 /** Procedural cloth: graded green, edge falloff, fabric grain. */
 function paintCloth(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   const g = ctx.createRadialGradient(w / 2, h * 0.42, w * 0.05, w / 2, h * 0.5, w * 0.72)
-  g.addColorStop(0, '#1f8a54')
-  g.addColorStop(0.6, '#136a41')
-  g.addColorStop(1, '#0c4a2c')
+  // Kungsblå wool: a Swedish kitchen-table cloth, deliberately NOT casino green, so this
+  // table never reads as Blackjack's. Slate blue also keeps red and black suits
+  // equally legible, which green-under-warm-light does not quite do for hearts.
+  g.addColorStop(0, '#3b5b72')
+  g.addColorStop(0.6, '#2c465a')
+  g.addColorStop(1, '#1d3142')
   ctx.fillStyle = g
   ctx.fillRect(0, 0, w, h)
 
@@ -74,14 +77,10 @@ export function feltTexture(rules: Rules): THREE.CanvasTexture {
     w: TEX_W,
     h: TEX_H,
     rules,
-    // Labels sit on the far side of the draw pile and the burn tray: the near side is
-    // under your own face-up row.
-    drawLabel: { x: feltCanvasX(DRAW_POS.x), y: feltCanvasY(DRAW_POS.z - 1.3) },
-    burnLabel: { x: feltCanvasX(BURN_POS.x), y: feltCanvasY(BURN_POS.z - 1.3) },
     // The only strip no seat ever covers: between your face-up row and the near rail
     // (your hand is held off the table, so that strip stays empty).
-    titleY: feltCanvasY(3.72),
-    rulesY: feltCanvasY(4.22),
+    titleY: feltCanvasY(5.45),
+    rulesY: feltCanvasY(5.95),
   }))
   // preserveBase: the cloth is painted first and the vector type composites over it.
   return svgToTexture(svg, TEX_W, TEX_H, { basePaint: paintCloth, preserveBase: true })

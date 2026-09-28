@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyMove, chooseMove, chooseSwaps } from '../src/game/bot.ts'
+import { applyMove, chooseMove, chooseSwaps, prepareBot } from '../src/game/bot.ts'
 import { SkitgubbeGame } from '../src/game/engine/game.ts'
 import { DEFAULT_RULES } from '../src/game/engine/rules.ts'
 
@@ -17,8 +17,7 @@ test('bots finish every game with only legal moves, for every player count and s
       const players = 2 + (seed % 3)
       const game = new SkitgubbeGame({ players, rules, random: seeded(seed) })
       for (let p = 0; p < players; p++) {
-        for (const [h, u] of chooseSwaps(game, p)) assert.ok(game.swap(p, h, u))
-        game.ready(p)
+        prepareBot(game, p)
       }
       let moves = 0
       while (game.getSnapshot().phase === 'playing') {
@@ -38,13 +37,13 @@ test('a bot sheds its cheapest fitting card, all copies, and keeps its wild card
   assert.deepEqual(chooseMove(game, 0), { type: 'play', ids: ['6S', '6H'] })
 })
 
-test('a bot spends a 10 on a big pile but not on a small one', () => {
+test('a bot uses a 10 to finish on the same turn, regardless of pile size', () => {
   const big = new SkitgubbeGame({ players: 2, rules: { ...DEFAULT_RULES, swapPhase: false } })
   big.setup({ players: [{ hand: ['10S', 'AS'] }, { hand: ['KC'] }], pile: ['3C', '4C', '6C', '7C', '8C', '9C'] })
   assert.deepEqual(chooseMove(big, 0), { type: 'play', ids: ['10S'] })
   const small = new SkitgubbeGame({ players: 2, rules: { ...DEFAULT_RULES, swapPhase: false } })
   small.setup({ players: [{ hand: ['10S', 'AS'] }, { hand: ['KC'] }], pile: ['9C'] })
-  assert.deepEqual(chooseMove(small, 0), { type: 'play', ids: ['AS'] })
+  assert.deepEqual(chooseMove(small, 0), { type: 'play', ids: ['10S'] })
 })
 
 test('with nothing that fits, a bot tries a chance card before taking the pile', () => {
@@ -62,4 +61,31 @@ test('the swap puts the strongest cards face up', () => {
   const { hand, up } = game.getSnapshot().players[1]
   const strength = c => ({ '10': 30, '2': 29, '5': 20, J: 11, Q: 12, K: 13, A: 14 })[c.rank] ?? Number(c.rank)
   assert.ok(Math.min(...up.map(strength)) >= Math.max(...hand.map(strength)))
+})
+
+// Contract probes from the owner's 2 rule and the request for sensible human tactics.
+test('a bot sees the 2 then low-card finish instead of giving away the turn', () => {
+  const game = new SkitgubbeGame({ players: 2, rules: { ...DEFAULT_RULES, swapPhase: false } })
+  game.setup({ players: [{ hand: ['3S', '2S'] }, { hand: ['KS'] }] })
+  assert.deepEqual(chooseMove(game, 0), { type: 'play', ids: ['2S'] })
+  applyMove(game, 0, chooseMove(game, 0))
+  applyMove(game, 0, chooseMove(game, 0))
+  assert.equal(game.getSnapshot().players[0].place, 1)
+})
+
+test('a bot blocks a visible final card instead of blindly shedding its lowest card', () => {
+  const game = new SkitgubbeGame({ players: 2, rules: { ...DEFAULT_RULES, swapPhase: false } })
+  game.setup({ players: [{ hand: ['4S', '9S', 'KS'], down: ['2S'] }, { up: ['6H'] }] })
+  assert.deepEqual(chooseMove(game, 0), { type: 'play', ids: ['9S'] })
+})
+
+test('changing hidden ranks with the same public counts never changes the bot choice', () => {
+  const game = new SkitgubbeGame({ players: 2, rules: { ...DEFAULT_RULES, swapPhase: false } })
+  const choices = []
+  for (const hidden of ['3H', 'AH', '10H']) {
+    game.setup({ players: [{ hand: ['4S', '9S', 'KS'], down: [hidden] }, { hand: ['6H'] }] })
+    choices.push(chooseMove(game, 0))
+  }
+  assert.deepEqual(choices[0], choices[1])
+  assert.deepEqual(choices[1], choices[2])
 })

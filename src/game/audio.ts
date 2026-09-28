@@ -1,242 +1,196 @@
-// Copied from Mini Games (src/audio.ts) and extended for Skitgubbe's events.
+// The table's sound, rebuilt after the owner called v1 "just annoying".
 //
-// All sound is synthesized — the sandboxed frame's CSP forbids loading audio files.
-// Web Audio is allowed; the context must be created/resumed from a user gesture
-// (unlock()). Sounds are built from oscillators plus short bursts of filtered noise,
-// which is what gives the chip a metallic "clink" and the card a paper "swish"
-// rather than a pure beep.
+// What was wrong with v1, and the rules that replace it:
+// - It made a sound PER CARD. A deal landed 27–36 clicks, a pickup 30, and every
+//   rearrangement of a bot's hand clicked too. Now there is at most one sound per
+//   move: one "place" when a play lands, one soft riffle for the whole deal, one
+//   gather for a pickup. Cards moving around the table are otherwise silent.
+// - It buzzed on every rejected click. Refusals are shown, never sounded.
+// - Its noise bursts were bright and dry (high-passed hiss, sawtooth). Everything here
+//   is low-passed, soft-attacked and quiet, through one master gain and a gentle
+//   compressor, so nothing pokes out of the mix.
+// - Only three moments are allowed to be noticeable: a burn, your turn arriving (a
+//   quiet two-note wooden chime, because bots move on their own and you need to know
+//   when to look), and the end of the game.
+//
+// All synthesized: the extension frame's CSP forbids loading audio files. The
+// AudioContext is created lazily in unlock(), from a user gesture, because browsers
+// refuse to start audio any other way.
+
+const MASTER = 0.5
+
 export class GameAudio {
   private ctx: AudioContext | null = null
+  private master: GainNode | null = null
   private noiseBuf: AudioBuffer | null = null
   private muted = false
+  private last = new Map<string, number>()
 
   unlock(): void {
     if (this.muted) return
     if (!this.ctx) {
       try {
-        const Ctor =
-          window.AudioContext ??
-          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-        this.ctx = Ctor ? new Ctor() : null
-        if (this.ctx) this.buildNoise()
+        const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (!Ctor) return
+        const ctx = new Ctor()
+        const master = ctx.createGain()
+        master.gain.value = MASTER
+        const comp = ctx.createDynamicsCompressor()
+        comp.threshold.value = -20
+        comp.knee.value = 12
+        comp.ratio.value = 3
+        master.connect(comp)
+        comp.connect(ctx.destination)
+        const len = Math.floor(ctx.sampleRate * 0.6)
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate)
+        const data = buf.getChannelData(0)
+        // Brown-ish noise (integrated white noise): paper and cloth sound dull and soft,
+        // which is what cards on wool sound like. White noise is what made v1 hiss.
+        let v = 0
+        for (let i = 0; i < len; i++) {
+          v = (v + (Math.random() * 2 - 1) * 0.08) * 0.985
+          data[i] = v * 3
+        }
+        this.ctx = ctx
+        this.master = master
+        this.noiseBuf = buf
       } catch {
         this.ctx = null
       }
     }
-    if (this.ctx && this.ctx.state === 'suspended') void this.ctx.resume().catch(() => {})
+    if (this.ctx?.state === 'suspended') void this.ctx.resume().catch(() => {})
   }
 
-  setMuted(m: boolean): void {
-    this.muted = m
+  setMuted(muted: boolean): void {
+    this.muted = muted
+    if (!this.ctx || !this.master) return
+    // Ramp the shared gain so notes already scheduled (a chord's tail) go quiet too.
+    const now = this.ctx.currentTime
+    this.master.gain.cancelScheduledValues(now)
+    this.master.gain.setTargetAtTime(muted ? 0 : MASTER, now, 0.02)
   }
+
   get isMuted(): boolean {
     return this.muted
   }
 
-  private buildNoise(): void {
-    const ctx = this.ctx!
-    const len = Math.floor(ctx.sampleRate * 0.4)
-    const buf = ctx.createBuffer(1, len, ctx.sampleRate)
-    const data = buf.getChannelData(0)
-    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1
-    this.noiseBuf = buf
+  /** At most one of `key` per `gap` seconds, on the audio clock. */
+  private admit(key: string, gap: number): boolean {
+    const ctx = this.ctx
+    if (!ctx || this.muted) return false
+    const last = this.last.get(key) ?? -Infinity
+    if (ctx.currentTime - last < gap && ctx.currentTime >= last) return false
+    this.last.set(key, ctx.currentTime)
+    return true
   }
 
-  private tone(
-    freq: number,
-    dur: number,
-    type: OscillatorType,
-    gain: number,
-    offset = 0,
-    glideTo?: number,
-  ): void {
+  private jitter(cents: number): number {
+    return 2 ** (((Math.random() * 2 - 1) * cents) / 1200)
+  }
+
+  private tone(freq: number, dur: number, gain: number, at = 0, type: OscillatorType = 'sine', attack = 0.008): void {
     const ctx = this.ctx
-    if (!ctx || this.muted) return
-    const t = ctx.currentTime + offset
+    if (!ctx || !this.master || this.muted) return
+    const t = ctx.currentTime + at
     const osc = ctx.createOscillator()
     const env = ctx.createGain()
     osc.type = type
     osc.frequency.setValueAtTime(freq, t)
-    if (glideTo !== undefined) osc.frequency.exponentialRampToValueAtTime(Math.max(1, glideTo), t + dur)
     env.gain.setValueAtTime(0.0001, t)
-    env.gain.linearRampToValueAtTime(gain, t + 0.006)
+    env.gain.linearRampToValueAtTime(gain, t + attack)
     env.gain.exponentialRampToValueAtTime(0.0001, t + dur)
     osc.connect(env)
-    env.connect(ctx.destination)
+    env.connect(this.master)
+    osc.onended = () => { osc.disconnect(); env.disconnect() }
     osc.start(t)
-    osc.stop(t + dur + 0.02)
+    osc.stop(t + dur + 0.05)
   }
 
-  private noise(
-    dur: number,
-    gain: number,
-    filter: BiquadFilterType,
-    freq: number,
-    q: number,
-    offset = 0,
-  ): void {
+  private rustle(dur: number, gain: number, cutoff: number, at = 0, attack = 0.01, cutoffTo?: number): void {
     const ctx = this.ctx
-    if (!ctx || this.muted || !this.noiseBuf) return
-    const t = ctx.currentTime + offset
-    const src = ctx.createBufferSource()
-    src.buffer = this.noiseBuf
-    const flt = ctx.createBiquadFilter()
-    flt.type = filter
-    flt.frequency.value = freq
-    if (q) flt.Q.value = q
-    const env = ctx.createGain()
-    env.gain.setValueAtTime(0.0001, t)
-    env.gain.linearRampToValueAtTime(gain, t + 0.003)
-    env.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-    src.connect(flt)
-    flt.connect(env)
-    env.connect(ctx.destination)
-    src.start(t)
-    src.stop(t + dur + 0.02)
-  }
-
-  // Every impact sound is PITCH-JITTERED (§10). Real cards and chips never make the
-  // identical sound twice; playing one sample verbatim five times in a row is instantly
-  // recognisable as synthetic and is what made a dealt hand sound like a UI, not a table.
-  private jitter(spread = 0.07): number {
-    return 1 + (Math.random() * 2 - 1) * spread
-  }
-
-  private lastDeal = -1
-
-  /** Card landing on felt — a short paper swish plus a soft body thud. */
-  deal(): void {
-    // A Skitgubbe deal lands 27–36 cards and a pickup can land 30 at once. Summed at the
-    // same instant they are one harsh crack, so landings closer than 35 ms merge into one.
-    const now = this.ctx?.currentTime ?? 0
-    if (this.ctx && now - this.lastDeal < 0.035 && now >= this.lastDeal) return
-    this.lastDeal = now
-    const j = this.jitter(0.09)
-    // Band-passed noise IS the swish: paper sliding is broadband friction, not a tone.
-    this.noise(0.085 * j, 0.1, 'bandpass', 1500 * j, 0.7, 0)
-    // A touch of low body so the card has weight where it lands.
-    this.tone(190 * j, 0.055, 'triangle', 0.035)
-    // A second, quieter swish a few ms later reads as the card settling against the felt.
-    this.noise(0.05, 0.035, 'bandpass', 950 * j, 0.9, 0.035)
-  }
-
-  /**
-   * Cards being swept off the felt into the discard tray — a longer, softer swoosh.
-   *
-   * Distinct from `deal()` on purpose: a deal is a single card striking felt (short,
-   * with a transient), a sweep is several cards dragging across cloth (longer, no
-   * attack, and it DECAYS in brightness as the cards slow). The downward filter sweep is
-   * what makes it read as motion ending rather than an object landing.
-   */
-  sweep(): void {
-    const ctx = this.ctx
-    if (!ctx || this.muted || !this.noiseBuf) return
-    const t = ctx.currentTime
-    const dur = 0.42
-    const j = this.jitter(0.08)
-
+    if (!ctx || !this.master || this.muted || !this.noiseBuf) return
+    const t = ctx.currentTime + at
     const src = ctx.createBufferSource()
     src.buffer = this.noiseBuf
     src.loop = true
-
-    const flt = ctx.createBiquadFilter()
-    flt.type = 'bandpass'
-    flt.Q.value = 0.85
-    // Bright at the start (cards moving fast), darkening as they settle.
-    flt.frequency.setValueAtTime(2100 * j, t)
-    flt.frequency.exponentialRampToValueAtTime(520 * j, t + dur)
-
+    src.playbackRate.value = this.jitter(120)
+    const lp = ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.setValueAtTime(cutoff, t)
+    if (cutoffTo) lp.frequency.exponentialRampToValueAtTime(cutoffTo, t + dur)
     const env = ctx.createGain()
-    // Slow attack — no click. A sweep has no impact moment.
     env.gain.setValueAtTime(0.0001, t)
-    env.gain.linearRampToValueAtTime(0.075, t + 0.09)
+    env.gain.linearRampToValueAtTime(gain, t + attack)
     env.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-
-    src.connect(flt)
-    flt.connect(env)
-    env.connect(ctx.destination)
-    src.start(t)
-    src.stop(t + dur + 0.02)
+    src.connect(lp)
+    lp.connect(env)
+    env.connect(this.master)
+    src.onended = () => { src.disconnect(); lp.disconnect(); env.disconnect() }
+    src.start(t, Math.random() * 0.5)
+    src.stop(t + dur + 0.05)
   }
 
-  /**
-   * The dealer reshuffling — a riffle: a burst of many tiny card ticks, then a soft
-   * square-up thud. Built as a rapid train of filtered noise clicks with randomised
-   * spacing, because a riffle IS many near-identical transients; a single noise burst
-   * reads as static instead of cards.
-   */
-  shuffle(): void {
-    if (!this.ctx || this.muted) return
-    let t = 0
-    for (let i = 0; i < 26; i++) {
-      this.noise(0.02, 0.032 + Math.random() * 0.02, 'bandpass', 2400 + Math.random() * 1800, 1.2, t)
-      t += 0.014 + Math.random() * 0.012
-    }
-    // The squared-up deck landing on the felt.
-    this.noise(0.09, 0.07, 'lowpass', 900, 0, t + 0.06)
-    this.tone(150, 0.09, 'triangle', 0.05, t + 0.06)
+  /** A card set lands on the pile: a soft, dull slap on wool. */
+  place(): void {
+    if (!this.admit('place', 0.06)) return
+    const j = this.jitter(80)
+    this.rustle(0.09, 0.22, 1400 * j, 0, 0.003)
+    this.tone(150 * j, 0.07, 0.05)
   }
 
-  /**
-   * The pile burns: a low whump under a rising bright hiss, like paper catching. It has
-   * to read as the biggest thing that can happen in a turn without being a fanfare,
-   * because it happens several times a game.
-   */
+  /** The whole deal as one gentle riffle, not thirty clicks. */
+  deal(): void {
+    if (!this.admit('deal', 0.5)) return
+    for (let i = 0; i < 9; i++) this.rustle(0.05, 0.08 + Math.random() * 0.04, 1800, i * 0.09 + Math.random() * 0.02, 0.004)
+  }
+
+  /** A blind card turns over. */
+  reveal(): void {
+    if (!this.admit('reveal', 0.1)) return
+    this.rustle(0.12, 0.12, 2200, 0, 0.02, 900)
+  }
+
+  /** A pile slides into someone's hand. */
+  gather(): void {
+    if (!this.admit('gather', 0.2)) return
+    this.rustle(0.32, 0.14, 1600, 0, 0.06, 500)
+  }
+
+  /** The pile burns: a warm, low whoomp that swells and settles. Noticeable, not loud. */
   burn(): void {
-    this.tone(95, 0.32, 'sine', 0.16, 0, 52)
-    this.noise(0.5, 0.075, 'bandpass', 900, 0.8, 0.02)
-    this.noise(0.35, 0.05, 'highpass', 3800, 0, 0.08)
-    this.tone(880, 0.22, 'triangle', 0.06, 0.12, 1320)
+    if (!this.admit('burn', 0.3)) return
+    this.rustle(0.55, 0.3, 700, 0, 0.05, 2400)
+    this.tone(82, 0.45, 0.12, 0.02, 'sine', 0.04)
+    this.tone(123, 0.35, 0.05, 0.05, 'triangle', 0.04)
   }
 
-  /** Taking the pile — a scoop of cards: a long rustle that brightens as they gather. */
-  pickup(): void {
-    if (!this.ctx || this.muted) return
-    let t = 0
-    for (let i = 0; i < 12; i++) {
-      this.noise(0.025, 0.028 + Math.random() * 0.015, 'bandpass', 1400 + i * 110 + Math.random() * 400, 1.1, t)
-      t += 0.018 + Math.random() * 0.01
-    }
-    this.tone(210, 0.12, 'triangle', 0.05, t)
+  /** Your turn: a quiet two-note wooden chime (a fifth, soft attack, no tail). */
+  yourTurn(): void {
+    if (!this.admit('turn', 0.4)) return
+    this.tone(660, 0.18, 0.045, 0, 'triangle', 0.01)
+    this.tone(990, 0.22, 0.035, 0.09, 'triangle', 0.01)
   }
 
-  /** A see-through 5 lands: a soft glassy blip, so the "it doesn't count" beat is heard. */
-  ghost(): void {
-    this.tone(1320, 0.12, 'sine', 0.05, 0, 1760)
-    this.tone(1980, 0.16, 'sine', 0.025, 0.03)
+  /** You got out (not first): a small warm major third. */
+  out(): void {
+    this.tone(523, 0.3, 0.06, 0, 'triangle')
+    this.tone(659, 0.4, 0.05, 0.1, 'triangle')
   }
 
-  /** A card you cannot play right now. Quiet and dull: a "no", not an error buzzer. */
-  denied(): void {
-    this.tone(160, 0.08, 'sine', 0.07, 0, 110)
+  /** You were first out: a short, bright, rising arpeggio. */
+  won(): void {
+    ;[523, 659, 784, 1047].forEach((f, i) => this.tone(f, i === 3 ? 0.6 : 0.25, 0.06, i * 0.1, 'triangle'))
   }
 
-  /** Going out (any place but last) — a bright rising major arpeggio. */
-  win(): void {
-    this.tone(523, 0.1, 'triangle', 0.15, 0)
-    this.tone(659, 0.1, 'triangle', 0.15, 0.09)
-    this.tone(784, 0.16, 'triangle', 0.16, 0.18)
-  }
-
-  /** Going out first — the win fanfare, taller and with a shimmer on top. */
-  fanfare(): void {
-    this.tone(523, 0.1, 'triangle', 0.15, 0)
-    this.tone(659, 0.1, 'triangle', 0.15, 0.08)
-    this.tone(784, 0.1, 'triangle', 0.16, 0.16)
-    this.tone(1046, 0.24, 'triangle', 0.17, 0.24)
-    this.tone(1568, 0.3, 'sine', 0.08, 0.28)
-  }
-
-  /** You are the skitgubbe — a soft, resigned descending pair. */
-  lose(): void {
-    this.tone(300, 0.16, 'sawtooth', 0.1, 0, 190)
-    this.tone(150, 0.22, 'sine', 0.09, 0.1)
+  /** You are the skitgubbe: a gentle falling pair, rueful rather than punishing. */
+  lost(): void {
+    this.tone(392, 0.35, 0.06, 0, 'triangle')
+    this.tone(311, 0.55, 0.05, 0.18, 'triangle')
   }
 
   dispose(): void {
-    if (this.ctx) {
-      void this.ctx.close().catch(() => {})
-      this.ctx = null
-    }
+    if (this.ctx) void this.ctx.close().catch(() => {})
+    this.ctx = null
+    this.master = null
   }
 }

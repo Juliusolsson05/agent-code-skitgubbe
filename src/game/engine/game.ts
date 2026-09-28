@@ -10,7 +10,7 @@
 // a rejected click must be a no-op, not a crash.
 
 import { newDeck, RANK_VALUE, shuffle, type Card } from './cards'
-import { burnReason, canPlayOn, DEFAULT_RULES, isFinishForbidden, isWild, type Rules } from './rules'
+import { burnReason, canPlayOn, DEFAULT_RULES, isFinishForbidden, type Rules } from './rules'
 
 export type Phase = 'swap' | 'playing' | 'over'
 /** Where a player's next card must come from. Hand first; face-up only once the hand is
@@ -22,6 +22,9 @@ export type Player = {
   bot: boolean
   hand: Card[]
   up: Card[]
+  /** Card id → original table position. Matching setup cards share a position; array
+   *  indices cannot represent this because stacking adds cards without adding slots. */
+  upSlots: Record<string, number>
   down: Card[]
   /** Swap phase only: this player has finished swapping. */
   ready: boolean
@@ -30,6 +33,7 @@ export type Player = {
 }
 
 export type GameEvent =
+  | { type: 'stack'; player: number; card: Card }
   | { type: 'play'; player: number; cards: Card[]; source: Source }
   | { type: 'flip'; player: number; card: Card; ok: boolean }
   | { type: 'chance'; player: number; card: Card; ok: boolean }
@@ -104,7 +108,7 @@ export class SkitgubbeGame {
     const names = options.names ?? DEFAULT_NAMES
     const deck = options.deck ? [...options.deck] : shuffle(newDeck(), options.random ?? Math.random)
     this.players = Array.from({ length: count }, (_, i) => ({
-      name: names[i] ?? `Player ${i + 1}`, bot: i !== 0, hand: [], up: [], down: [], ready: false, place: null,
+      name: names[i] ?? `Player ${i + 1}`, bot: i !== 0, hand: [], up: [], upSlots: {}, down: [], ready: false, place: null,
     }))
     // Dealt the way people deal at a table: a round of face-down cards, a round of
     // face-up cards on top, then a round of hand cards. With a fixed test deck this
@@ -112,6 +116,7 @@ export class SkitgubbeGame {
     for (const pile of ['down', 'up', 'hand'] as const)
       for (let round = 0; round < HAND_SIZE; round++)
         for (const player of this.players) player[pile].push(deck.shift()!)
+    for (const player of this.players) player.up.forEach((card, i) => { player.upSlots[card.id] = i })
     // The draw pile is popped from the end, so reverse: the next card dealt from the
     // fixed deck order is the next one drawn.
     this.draw = deck.reverse()
@@ -135,6 +140,7 @@ export class SkitgubbeGame {
       const player = this.players[i]!
       player.hand = take(seat.hand)
       player.up = take(seat.up)
+      player.upSlots = Object.fromEntries(player.up.map((card, i) => [card.id, i]))
       player.down = take(seat.down)
       player.place = seat.place ?? null
       player.ready = true
@@ -156,7 +162,7 @@ export class SkitgubbeGame {
       gameId: this.gameId,
       phase: this.phase,
       rules: { ...this.rules },
-      players: this.players.map(p => ({ ...p, hand: [...p.hand], up: [...p.up], down: [...p.down] })),
+      players: this.players.map(p => ({ ...p, hand: [...p.hand], up: [...p.up], upSlots: { ...p.upSlots }, down: [...p.down] })),
       current: this.current,
       pile: [...this.pile],
       drawCount: this.draw.length,
@@ -223,8 +229,28 @@ export class SkitgubbeGame {
     const u = player.up.findIndex(c => c.id === upId)
     if (h < 0 || u < 0) return false
     const card = player.hand[h]!
-    player.hand[h] = player.up[u]!
-    player.up[u] = card
+    const target = player.up[u]!
+    const slot = player.upSlots[target.id]!
+    if (card.rank === target.rank) {
+      // The owner plays matching hand/table cards as one face-up stack during setup.
+      // Refill only the hand vacancy, using the real draw pile; no card is created and
+      // an exhausted deck simply leaves the shorter hand. The UI normalises either
+      // click order into these hand/table ids before calling this action.
+      player.hand.splice(h, 1)
+      player.up.push(card)
+      player.upSlots[card.id] = slot
+      this.events.push({ type: 'stack', player: p, card })
+      this.refill(p)
+    } else {
+      // A stacked position remains one rank. A normal swap exchanges its whole group
+      // with the selected hand card, otherwise swapping just its top card mixes ranks.
+      const group = player.up.filter(c => player.upSlots[c.id] === slot)
+      player.hand.splice(h, 1, ...group)
+      player.up = player.up.filter(c => player.upSlots[c.id] !== slot)
+      for (const c of group) delete player.upSlots[c.id]
+      player.up.splice(Math.min(u, player.up.length), 0, card)
+      player.upSlots[card.id] = slot
+    }
     return true
   }
 
@@ -250,6 +276,7 @@ export class SkitgubbeGame {
     if (!valid) return false
     const { source, played } = valid
     this.players[p]![source] = this.players[p]![source].filter(c => !cardIds.includes(c.id))
+    if (source === 'up') for (const card of played) delete this.players[p]!.upSlots[card.id]
     this.pile.push(...played)
     this.events.push({ type: 'play', player: p, cards: played, source })
     if (source === 'hand') this.refill(p)
@@ -359,6 +386,9 @@ export class SkitgubbeGame {
   }
 
   private afterPlay(p: number): void {
+    // Capture the played rank before a possible four-of-a-kind burn empties the pile.
+    // A reset 2 gives its player another play, independently of the burn setting.
+    const resetTwo = this.rules.twoResets && this.pile.at(-1)?.rank === '2'
     const reason = burnReason(this.pile, this.rules)
     if (reason) {
       this.events.push({ type: 'burn', player: p, reason, count: this.pile.length })
@@ -383,7 +413,7 @@ export class SkitgubbeGame {
       this.advance()
       return
     }
-    if (reason && this.rules.burnPlaysAgain) return
+    if (resetTwo || (reason && this.rules.burnPlaysAgain)) return
     this.advance()
   }
 
@@ -403,14 +433,16 @@ export class SkitgubbeGame {
     this.current = this.starter()
   }
 
-  /** The lowest ORDINARY hand card starts, so nobody opens with a wild card by default.
-   *  Ties go to the earliest seat, counting from you. */
+  /** The owner starts with the lowest hand card EXCEPT 2. Compute after everyone is
+   *  ready: swaps, stacks and replacement draws can change who has the low card.
+   *  Only 2 is excluded from this comparison; do not exclude every wild rank. Ties
+   *  (or the degenerate all-2 case) go to the earliest seat, counting from you. */
   private starter(): number {
     let best = 0
     let bestValue = Infinity
     this.players.forEach((player, i) => {
       for (const card of player.hand) {
-        if (isWild(card.rank, this.rules)) continue
+        if (card.rank === '2') continue
         if (RANK_VALUE[card.rank] < bestValue) {
           bestValue = RANK_VALUE[card.rank]
           best = i

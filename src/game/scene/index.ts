@@ -1,26 +1,11 @@
 import * as THREE from 'three'
 
-import type { Snapshot } from '../engine/game'
-import {
-  arcPosition,
-  clamp01,
-  DEAL_ARC_LIFT,
-  DEAL_DURATION,
-  DEAL_ROUND_STAGGER,
-  dealEase,
-  DEAL_SPIN,
-  DISCARD_ARC_LIFT,
-  DISCARD_DURATION,
-  DISCARD_STAGGER,
-  easeInOutCubic,
-  easeOutCubic,
-  FLIP_DURATION,
-  FLIP_LIFT,
-  prefersReducedMotion,
-  SCOOP_STAGGER,
-} from './animation'
+import type { Card } from '../engine/cards'
+import type { GameEvent } from '../engine/game'
+import { isKnown, type TableCard, type TableSnapshot as Snapshot } from '../../lan/protocol'
+import { clamp01, easeInOutCubic, easeOutCubic, prefersReducedMotion } from './animation'
 import { fitCamera, makeCamera } from './camera'
-import { DRAW_SPAWN, layoutTable, seatsFor } from './layout'
+import { DRAW_SPAWN, jitter, layoutTable, onSeat, pileTarget, REVEAL_POS, seatsFor, type CardTarget } from './layout'
 import { installLighting, type LightRig } from './lighting'
 import { disposeCard, disposeCardGeometry, makeCard } from './objects/card'
 import { buildPiles, type TablePiles } from './objects/piles'
@@ -28,45 +13,86 @@ import { buildTable } from './objects/table'
 import { installRoom } from './room'
 import { disposeCardTextures } from './textures/cardTextures'
 import { glowTexture } from './textures/surfaces'
-import { BURN_POS, PILE_POS, SEAT_HAND_OFFSET } from './world'
+import { BURN_POS, CH, DRAW_POS, PILE_POS } from './world'
 
-type CardEntry = {
-  group: THREE.Group
-  /** The arc is evaluated from these each frame, from wherever the card was when its
-   *  target last changed. Re-arming from the CURRENT pose (not the old target) is what
-   *  lets a card already in flight be redirected without a jump. */
+// ── MOTION PROFILES ─────────────────────────────────────────────────────────────────
+// v1 gave every change the same 420 ms arc with a 0.33 rad spin: a card sliding one
+// slot along a bot's hand hopped and twirled like a dealt card, and a 30-card pickup
+// queued for a second. A Codex review measured it and prescribed one profile per kind
+// of movement. The numbers below are those, and the principle is: the more often a
+// movement happens, the shorter, flatter and quieter it is.
+type Profile = { duration: number; lift: number; stagger: number; ease: (t: number) => number; spin: number; impact: boolean }
+const P = {
+  deal: { duration: 0.28, lift: 0.2, stagger: 0.028, ease: easeOutCubic, spin: 0.04, impact: false },
+  play: { duration: 0.28, lift: 0.12, stagger: 0.035, ease: easeInOutCubic, spin: 0, impact: true },
+  refill: { duration: 0.26, lift: 0.18, stagger: 0.055, ease: easeOutCubic, spin: 0, impact: false },
+  rearrange: { duration: 0.14, lift: 0, stagger: 0, ease: easeOutCubic, spin: 0, impact: false },
+  packet: { duration: 0.34, lift: 0.1, stagger: 0, ease: easeInOutCubic, spin: 0, impact: false },
+  burn: { duration: 0.3, lift: 0.08, stagger: 0, ease: easeInOutCubic, spin: 0, impact: false },
+  gather: { duration: 0.36, lift: 0.1, stagger: 0, ease: easeInOutCubic, spin: 0, impact: false },
+  reveal: { duration: 0.3, lift: 0, stagger: 0, ease: easeInOutCubic, spin: 0, impact: false },
+} satisfies Record<string, Profile>
+
+const HOLD_REVEAL_MS = 220
+const HOLD_BEFORE_BURN_MS = 100
+const HOLD_BEFORE_DEAL_MS = 100
+const GLOW_FADE = 0.16
+
+type Motion = {
   from: THREE.Vector3
   to: THREE.Vector3
-  /** Seconds since this travel started; negative = still waiting its turn in a stagger. */
-  t: number
   yawFrom: number
   yawTo: number
-  faceDown: boolean
-  flipT: number
-  flipFrom: number
-  landed: boolean
+  scaleFrom: number
+  scaleTo: number
+  t: number
+  profile: Profile
+  done?: () => void
 }
 
-type RetiringCard = { group: THREE.Group; from: THREE.Vector3; to: THREE.Vector3; t: number; yawFrom: number; yawTo: number }
-
-/** Sounds that belong to IMPACTS, fired when the visual lands, not when the engine
- *  decided the move (the Blackjack lesson: firing on decision played the swish while
- *  the card was still in the air). */
-export type SceneSfx = {
-  cardLand(): void
-  /** Once per burn, not once per card. */
-  cardSweep(): void
-}
+type Flip = { from: number; to: number; t: number; duration: number }
 
 /**
- * The Skitgubbe table in real 3D, built from Mini Games' Blackjack scene: same camera,
- * light rig, room, table, card construction and SVG texture pipeline, which that game's
- * spec derived and screenshot-verified. What is new here is the reconcile: a generic
- * "every card flies to its layout target" instead of Blackjack's dealer/player layout.
- *
- * ORCHESTRATOR ONLY, as in Blackjack: dimensions live in world.ts, where cards go in
- * layout.ts, how things look in materials/objects/textures. No colour literal or
- * dimension belongs in this file.
+ * A card on the table. The OUTER group carries position, yaw and scale; the INNER card
+ * carries only the flip. Composing a flip with a yaw on one Euler (v1) made a turning
+ * card wobble around a skewed axis, and a centred X flip swung the card's edge ~0.35
+ * units through the felt. Splitting them makes each rotation clean, and the flip lifts
+ * the inner card by exactly the clearance its half-length needs.
+ */
+type Entry = { outer: THREE.Group; inner: THREE.Group; motion: Motion | null; flip: Flip | null; faceDown: boolean; known: boolean }
+
+/** Sounds tied to what the player SEES, fired by the scene when it happens on screen. */
+export type SceneSfx = {
+  /** One card set of a play lands on the pile (once per play, not per card). */
+  place(): void
+  /** The opening deal starts (one sound for the whole deal). */
+  deal(): void
+  /** A blind or chance card turns over. */
+  reveal(): void
+  /** The pile goes up in smoke. */
+  burn(): void
+  /** A pile slides to someone's hand. */
+  gather(): void
+}
+
+/** Your hand is DOM, so moves into and out of it are overlays the view animates. The
+ *  scene calls these at the right point of a sequence and waits for them. */
+export type SelfHooks = {
+  /** Your hand cards are about to land on the pile: fly them there, then resolve. */
+  play(cards: Card[], destination?: Projected): Promise<void>
+  /** These cards just went from the table (or draw pile) into your hand. */
+  receive(cards: Card[], from: 'pile' | 'draw'): Promise<void>
+}
+
+/** A point on the table projected into stage pixels, plus how wide a card is there. */
+export type Projected = { x: number; y: number; cardWidth: number }
+
+/**
+ * The Skitgubbe table in 3D, built on Mini Games' Blackjack scene (camera, light rig,
+ * room, table body, card construction and SVG texture pipeline, all derived and
+ * screenshot-verified in that game's spec). What is Skitgubbe's own is the director:
+ * animate(prev, next, events) plays each engine action as a visible sequence and
+ * resolves when it is over, so the view can hold the next turn until the table is still.
  */
 export class SkitgubbeScene {
   private renderer: THREE.WebGLRenderer
@@ -78,23 +104,19 @@ export class SkitgubbeScene {
   private disposed = false
   private clock = new THREE.Clock()
   private reducedMotion = prefersReducedMotion()
-  private cards = new Map<string, CardEntry>()
-  private retiring: RetiringCard[] = []
+  private cards = new Map<string, Entry>()
   private table: ReturnType<typeof buildTable>
   private piles: TablePiles
   private gameId = -1
-  private burned = 0
-  private scratch = new THREE.Vector3()
-  /** A warm pool of light under whoever's turn it is. It glides between seats, so the
-   *  turn passing is something you SEE move round the table, not a label that changes. */
-  private turnGlow: THREE.Mesh
-  private turnFrom = new THREE.Vector3()
-  private turnTo = new THREE.Vector3()
-  private turnT = 1
-  /** A flash on the pile when it burns. Authored as an additive sprite, never bloom:
-   *  Blackjack's spec §2.2 is why this scene has no post-processing at all. */
+  /** Bumped by every new game and dispose: a sequence that awaits across a bump stops. */
+  private generation = 0
+  private glows: THREE.Mesh[] = []
+  private glowTarget = -1
+  private glowLevel: number[] = []
   private burnFlash: THREE.Mesh
   private burnFlashT = 1
+  private scratch = new THREE.Vector3()
+  private onResize: (() => void) | null = null
 
   constructor(private container: HTMLElement, private sfx: SceneSfx) {
     const w = Math.max(1, container.clientWidth)
@@ -115,17 +137,11 @@ export class SkitgubbeScene {
     this.table = buildTable(this.scene)
     this.piles = buildPiles(this.scene)
 
-    const glow = glowTexture()
-    this.turnGlow = new THREE.Mesh(
-      new THREE.PlaneGeometry(6.2, 3.4),
-      new THREE.MeshBasicMaterial({ map: glow, color: 0xffd98a, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false }),
-    )
-    this.turnGlow.rotation.x = -Math.PI / 2
-    this.turnGlow.position.y = 0.012
-    this.scene.add(this.turnGlow)
+    // A soft ember under the pile when it burns. An additive sprite, never bloom
+    // (Blackjack's spec §2.2 is why this scene has no post-processing at all).
     this.burnFlash = new THREE.Mesh(
-      new THREE.PlaneGeometry(4.2, 4.2),
-      new THREE.MeshBasicMaterial({ map: glow, color: 0xff9a4d, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }),
+      new THREE.PlaneGeometry(2.6, 2.6),
+      new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0xffa15a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }),
     )
     this.burnFlash.rotation.x = -Math.PI / 2
     this.burnFlash.position.set(PILE_POS.x, 0.02, PILE_POS.z)
@@ -137,177 +153,410 @@ export class SkitgubbeScene {
     this.raf = requestAnimationFrame(this.loop)
   }
 
-  // --- reconcile: engine state → meshes ---------------------------------------------
+  /** Called after every resize so the view can re-anchor its DOM labels. */
+  setOnResize(fn: (() => void) | null): void {
+    this.onResize = fn
+  }
 
-  update(snap: Snapshot): void {
+  // --- projection for DOM anchors and flights ----------------------------------------
+
+  project(world: THREE.Vector3): Projected {
+    const w = this.container.clientWidth
+    const h = this.container.clientHeight
+    const a = this.scratch.copy(world).project(this.camera)
+    const b = new THREE.Vector3(world.x + 1.42, world.y, world.z).project(this.camera)
+    return { x: (a.x * 0.5 + 0.5) * w, y: (-a.y * 0.5 + 0.5) * h, cardWidth: Math.abs(b.x - a.x) * 0.5 * w }
+  }
+
+  pileAnchor(): Projected { return this.project(new THREE.Vector3(PILE_POS.x, 0.1, PILE_POS.z)) }
+  drawAnchor(): Projected { return this.project(new THREE.Vector3(DRAW_POS.x, 0.5, DRAW_POS.z)) }
+  burnAnchor(): Projected { return this.project(new THREE.Vector3(BURN_POS.x, 0.2, BURN_POS.z)) }
+
+  /** Where an opponent's name plate belongs: at the far end of their table row, where
+   *  it labels their cards without covering any (the first placement sat on the hand). */
+  seatAnchor(players: number, seatIndex: number): Projected {
+    const seat = seatsFor(players)[seatIndex]!
+    if (seat.side) return this.project(new THREE.Vector3(seat.out.x * seat.depth, 0.1, -(seat.gap + 1.55)))
+    // A small screen-space badge on the far rail clears the back row even as the
+    // camera fits a different stage aspect. Its centre remains aligned to that seat.
+    return { ...this.project(onSeat(seat, 0, seat.depth, 0.1)), y: 20 }
+
+  }
+
+  // --- the director ------------------------------------------------------------------
+
+  /**
+   * Play what happened between two snapshots, then settle into `next`. Resolves when
+   * the table is still. A new game (different gameId) gathers the old cards first and
+   * then deals.
+   */
+  async animate(prev: Snapshot | null, next: Snapshot, events: GameEvent[], self: SelfHooks): Promise<void> {
     if (this.disposed) return
-    const fresh = snap.gameId !== this.gameId
-    if (fresh) this.reset(snap.gameId)
-    this.table.setRules(snap.rules)
+    this.table.setRules(next.rules)
+    if (!prev || next.gameId !== this.gameId) return this.newGame(next, self)
+    const gen = this.generation
+    // Visual order of the pile, kept in step with the engine's as events are replayed.
+    let pile = [...prev.pile]
+    let revealed: Card | null = null
+    // Received cards belong to this action, even if absent from the previous pile
+    // (notably a failed blind/chance reveal). They must never be refilled a second
+    // time from the deck during final reconciliation.
+    const receivedSelf = new Set<string>()
 
-    const targets = layoutTable(snap, fresh)
-    let moving = 0
-    for (const [id, target] of targets) {
-      let entry = this.cards.get(id)
-      if (!entry) {
-        // Every card enters from the draw pile: the deal and every refill.
-        const card = findCard(snap, id)!
-        const group = makeCard(card.rank, card.suit)
-        group.position.copy(DRAW_SPAWN)
-        group.rotation.set(Math.PI, 0, 0)
-        this.scene.add(group)
-        entry = {
-          group,
-          from: DRAW_SPAWN.clone(),
-          to: target.position.clone(),
-          t: this.reducedMotion ? DEAL_DURATION : -(fresh ? target.delay * DEAL_ROUND_STAGGER : moving * DEAL_ROUND_STAGGER * 2),
-          yawFrom: 0,
-          yawTo: target.yaw,
-          faceDown: true,
-          // A new card starts face down (it came off the draw pile) and turns over in
-          // flight if its target is face up, so a refill visibly becomes YOUR card.
-          flipT: FLIP_DURATION,
-          flipFrom: Math.PI,
-          landed: false,
+    for (const e of events) {
+      if (gen !== this.generation) return
+      if (e.type === 'stack') {
+        const target = layoutTable(next).get(e.card.id)!
+        if (e.player === 0) {
+          await self.play([e.card], this.project(target.position))
+          this.place(e.card, target)
+        } else await this.moveAll([[e.card, target]], P.play)
+        this.sfx.place()
+      } else if (e.type === 'play') {
+        if (e.player === 0 && e.source === 'hand') {
+          await self.play(e.cards)
+          if (gen !== this.generation) return
+          // The overlay has arrived: the real cards appear in place, settled.
+          e.cards.forEach((card, i) => this.place(card, pileTarget(card, pile.length + i)))
+        } else {
+          await this.moveAll(e.cards.map((card, i) => [card, pileTarget(card, pile.length + i)] as const), P.play)
         }
-        this.cards.set(id, entry)
-        moving++
-      } else if (!entry.to.equals(target.position) || entry.yawTo !== target.yaw) {
-        entry.from.copy(entry.group.position)
-        entry.to.copy(target.position)
-        entry.yawFrom = entry.group.rotation.y
-        entry.yawTo = target.yaw
-        entry.t = this.reducedMotion ? DEAL_DURATION : -moving * SCOOP_STAGGER
-        entry.landed = false
-        moving++
+        pile = [...pile, ...e.cards]
+        this.sfx.place()
+      } else if (e.type === 'flip' || e.type === 'chance') {
+        // Blind cards are held up where everyone can read them, then land or are taken.
+        if (!this.cards.has(e.card.id)) this.spawn(e.card, DRAW_SPAWN, 0, true)
+        this.sfx.reveal()
+        await this.moveAll([[e.card, { position: REVEAL_POS.clone(), yaw: 0, faceDown: false, scale: 1.12, order: 0 }]], P.reveal)
+        await this.wait(HOLD_REVEAL_MS, gen)
+        if (e.ok) {
+          await this.moveAll([[e.card, pileTarget(e.card, pile.length)]], P.play)
+          pile = [...pile, e.card]
+          this.sfx.place()
+        } else {
+          revealed = e.card
+        }
+      } else if (e.type === 'burn') {
+        await this.wait(HOLD_BEFORE_BURN_MS, gen)
+        this.burnFlashT = this.reducedMotion ? 1 : 0
+        this.sfx.burn()
+        await this.retire(pile, new THREE.Vector3(BURN_POS.x, 0.6, BURN_POS.z), P.burn)
+        pile = []
+        this.piles.setBurned(next.burnedCount / 52)
+      } else if (e.type === 'pickup') {
+        const taken = revealed ? [...pile, revealed] : pile
+        revealed = null
+        this.sfx.gather()
+        if (e.player === 0) {
+          // Into YOUR hand: the table cards leave, and the view flies them into the rail.
+          await Promise.all([this.retire(taken, this.nearEdge(), P.packet, true), self.receive(taken, 'pile')])
+          taken.forEach(card => receivedSelf.add(card.id))
+        } else {
+          const targets = layoutTable(next)
+          await this.moveAll(taken.map(card => [card, targets.get(card.id)!] as const).filter(([, t]) => t), P.packet)
+        }
+        pile = []
       }
-      if (entry.faceDown !== target.faceDown) {
-        entry.flipFrom = entry.group.rotation.x
-        // Start the turn together with the card's travel (a staggered deal card waits
-        // its turn face down, then turns over in flight) rather than flipping in place
-        // while it is still sitting on the draw pile.
-        entry.flipT = this.reducedMotion ? FLIP_DURATION : Math.min(0, entry.t)
-        entry.faceDown = target.faceDown
-      }
     }
-
-    // Cards that left play (a burn) sweep into the burn tray rather than vanishing.
-    let retired = 0
-    for (const [id, entry] of this.cards) {
-      if (targets.has(id)) continue
-      this.retiring.push({
-        group: entry.group,
-        from: entry.group.position.clone(),
-        to: new THREE.Vector3(BURN_POS.x, 0.6, BURN_POS.z),
-        t: this.reducedMotion ? DISCARD_DURATION : -retired * DISCARD_STAGGER,
-        yawFrom: entry.group.rotation.y,
-        yawTo: entry.group.rotation.y + 0.8 + Math.random() * 0.8,
-      })
-      this.cards.delete(id)
-      retired++
-    }
-    if (retired) {
-      this.sfx.cardSweep()
-      this.burnFlashT = this.reducedMotion ? 1 : 0
-    }
-    this.burned = snap.burnedCount
-    this.piles.setDraw(snap.drawCount / 52)
-    this.piles.setBurned(this.burned / 52)
-
-    // The turn glow follows the current player (and goes out when the game is over).
-    const seat = seatsFor(snap.players.length)[snap.current]!
-    const next = new THREE.Vector3().copy(seat.out).multiplyScalar(seat.depth + SEAT_HAND_OFFSET * 0.45).setY(0.012)
-    if (!next.equals(this.turnTo)) {
-      this.turnFrom.copy(fresh ? next : this.turnGlow.position)
-      this.turnTo.copy(next)
-      this.turnT = this.reducedMotion || fresh ? 1 : 0
-      this.turnGlow.rotation.z = seat.out.x !== 0 ? Math.PI / 2 : 0
-    }
-    ;(this.turnGlow.material as THREE.MeshBasicMaterial).opacity = snap.phase === 'playing' ? 0.2 : 0
+    if (gen !== this.generation) return
+    await this.settle(prev, next, self, receivedSelf)
   }
 
-  private reset(gameId: number): void {
-    // A new deal gathers every card from the previous game back into the deck: sweep
-    // them all to the draw pile instead of blinking the table empty.
-    this.gameId = gameId
-    let i = 0
-    for (const entry of this.cards.values()) {
-      this.retiring.push({
-        group: entry.group,
-        from: entry.group.position.clone(),
-        to: DRAW_SPAWN.clone(),
-        t: this.reducedMotion ? DISCARD_DURATION : -(i++) * 0.008,
-        yawFrom: entry.group.rotation.y,
-        yawTo: 0,
-      })
+  /** Reach the resting layout of `next`: refills come off the draw pile, everything else
+   *  that moved slides without a hop, and the turn light moves to whoever is next. */
+  private async settle(prev: Snapshot, next: Snapshot, self: SelfHooks, receivedSelf: ReadonlySet<string>): Promise<void> {
+    const gen = this.generation
+    const targets = layoutTable(next)
+    const arrivals: Array<[TableCard, CardTarget]> = []
+    const shifts: Array<[TableCard, CardTarget]> = []
+    for (const [id, target] of targets) {
+      const card = findCard(next, id)!
+      if (!this.cards.has(id)) arrivals.push([card, target])
+      else shifts.push([card, target])
     }
-    this.cards.clear()
-    this.burned = 0
+    // Cards that left the table without an event path (defensive: should not happen).
+    for (const id of [...this.cards.keys()]) if (!targets.has(id)) this.remove(id)
+
+    const prevMine = new Set(prev.players[0]!.hand.map(c => c.id))
+    const pileBefore = new Set(prev.pile.map(c => c.id))
+    const drawnForMe = next.players[0]!.hand.filter(c => !receivedSelf.has(c.id) && !prevMine.has(c.id) && !pileBefore.has(c.id) && !this.cards.has(c.id))
+
+    this.piles.setDraw(next.drawCount / 52)
+    arrivals.forEach(([card]) => this.spawn(card, DRAW_SPAWN, 0, true))
+    await Promise.all([
+      this.moveAll(shifts, P.rearrange),
+      this.moveAll(arrivals, P.refill),
+      drawnForMe.length ? self.receive(drawnForMe.filter(isKnown), 'draw') : Promise.resolve(),
+    ])
+    if (gen !== this.generation) return
+    this.showTurn(next)
   }
 
-  // --- render loop --------------------------------------------------------------------
+  private async newGame(next: Snapshot, self: SelfHooks): Promise<void> {
+    const gen = ++this.generation
+    this.gameId = next.gameId
+    this.hideTurn()
+    // Gather the old cards to the deck FIRST, then deal. v1 dealt while the previous
+    // game's cards were still flying back, and 54 cards crossed paths around the deck.
+    if (this.cards.size) {
+      await this.retire([...this.cards.keys()].map(id => ({ id }) as Card), DRAW_SPAWN.clone(), P.gather)
+      if (gen !== this.generation) return
+      await this.wait(HOLD_BEFORE_DEAL_MS, gen)
+    }
+    this.piles.setBurned(0)
+    this.piles.setDraw(1)
+    if (gen !== this.generation) return
+
+    const targets = [...layoutTable(next)].sort((a, b) => a[1].order - b[1].order)
+    this.sfx.deal()
+    for (const [id] of targets) this.spawn(findCard(next, id)!, DRAW_SPAWN, 0, true)
+    await Promise.all([
+      this.moveAll(targets.map(([id, t]) => [findCard(next, id)!, t] as const), P.deal),
+      // Your three hand cards arrive in the rail as the round that deals hands reaches you.
+      (async () => {
+        await this.wait(Math.round(targets.length * P.deal.stagger * 1000 * 0.66), gen)
+        if (gen === this.generation) await self.receive(next.players[0]!.hand.filter(isKnown), 'draw')
+      })(),
+    ])
+    if (gen !== this.generation) return
+    this.piles.setDraw(next.drawCount / 52)
+    this.showTurn(next)
+  }
+
+  sync(next: Snapshot): void {
+    ++this.generation
+    this.gameId = next.gameId
+    for (const id of [...this.cards.keys()]) this.remove(id)
+    this.table.setRules(next.rules)
+    for (const [id, target] of layoutTable(next)) {
+      const entry = this.spawn(findCard(next, id)!, target.position, target.yaw, target.faceDown)
+      entry.outer.scale.setScalar(target.scale)
+    }
+    this.piles.setDraw(next.drawCount / 52)
+    this.piles.setBurned(next.burnedCount / 52)
+    this.showTurn(next)
+  }
+
+  // --- movement primitives -------------------------------------------------------------
+
+  private spawn(card: TableCard, at: THREE.Vector3, yaw: number, faceDown: boolean): Entry {
+    const existing = this.cards.get(card.id)
+    if (existing) {
+      // An opponent's back becomes public only when its action arrives. Replace
+      // its blank face in place; spawning from the draw pile would reveal twice.
+      if (!existing.known && isKnown(card)) {
+        const inner = makeCard(card.rank, card.suit)
+        inner.rotation.copy(existing.inner.rotation)
+        existing.outer.remove(existing.inner)
+        disposeCard(existing.inner)
+        existing.outer.add(inner)
+        existing.inner = inner
+        existing.known = true
+      }
+      return existing
+    }
+    const inner = isKnown(card) ? makeCard(card.rank, card.suit) : makeCard()
+    inner.rotation.x = faceDown ? Math.PI : 0
+    const outer = new THREE.Group()
+    outer.add(inner)
+    outer.position.copy(at)
+    outer.rotation.y = yaw
+    this.scene.add(outer)
+    const entry: Entry = { outer, inner, motion: null, flip: null, faceDown, known: isKnown(card) }
+    this.cards.set(card.id, entry)
+    return entry
+  }
+
+  /** Put a card straight into a resting pose (a card arriving from your DOM hand). */
+  private place(card: Card, target: CardTarget): void {
+    const entry = this.spawn(card, target.position, target.yaw, false)
+    entry.outer.position.copy(target.position)
+    entry.outer.rotation.y = target.yaw
+    entry.outer.scale.setScalar(target.scale)
+    entry.inner.rotation.x = 0
+    entry.faceDown = false
+  }
+
+  /** Move cards to targets with one profile; resolves when the last one has landed. */
+  private moveAll(moves: ReadonlyArray<readonly [TableCard, CardTarget]>, profile: Profile): Promise<void> {
+    if (!moves.length) return Promise.resolve()
+    return new Promise(resolve => {
+      let pending = moves.length
+      const done = () => { if (--pending === 0) resolve() }
+      moves.forEach(([card, target], i) => {
+        const entry = this.spawn(card, DRAW_SPAWN, 0, true)
+        const stagger = profile === P.deal ? target.order : i
+        if (this.reducedMotion) {
+          entry.outer.position.copy(target.position)
+          entry.outer.rotation.y = target.yaw
+          entry.outer.scale.setScalar(target.scale)
+          entry.inner.rotation.x = target.faceDown ? Math.PI : 0
+          entry.inner.position.y = 0
+          entry.faceDown = target.faceDown
+          entry.motion = null
+          entry.flip = null
+          done()
+          return
+        }
+        entry.motion = {
+          from: entry.outer.position.clone(),
+          to: target.position.clone(),
+          yawFrom: entry.outer.rotation.y,
+          yawTo: shortestYaw(entry.outer.rotation.y, target.yaw),
+          scaleFrom: entry.outer.scale.x,
+          scaleTo: target.scale,
+          t: -stagger * profile.stagger,
+          profile,
+          done,
+        }
+        if (entry.faceDown !== target.faceDown) {
+          // The turn-over rides on the same travel, so a card is never seen flipping
+          // in place before it moves.
+          entry.flip = { from: entry.inner.rotation.x, to: target.faceDown ? Math.PI : 0, t: -stagger * profile.stagger, duration: profile.duration }
+          entry.faceDown = target.faceDown
+        }
+      })
+    })
+  }
+
+  /** Move cards as one packet to `to` and remove them on arrival. */
+  private retire(cards: Array<Pick<Card, 'id'>>, to: THREE.Vector3, profile: Profile, fadeOnly = false): Promise<void> {
+    const ids = cards.map(c => c.id).filter(id => this.cards.has(id))
+    if (!ids.length) return Promise.resolve()
+    if (this.reducedMotion || fadeOnly) {
+      for (const id of ids) this.remove(id)
+      return Promise.resolve()
+    }
+    // One packet: every card keeps its offset from the packet's centre and travels
+    // together, with no per-card stagger. v1 staggered 70 ms per card, so a 30-card
+    // burn became a 2.5 second queue of shrinking, spinning cards.
+    const centre = new THREE.Vector3()
+    for (const id of ids) centre.add(this.cards.get(id)!.outer.position)
+    centre.divideScalar(ids.length)
+    return new Promise(resolve => {
+      let pending = ids.length
+      for (const id of ids) {
+        const entry = this.cards.get(id)!
+        const offset = entry.outer.position.clone().sub(centre).multiplyScalar(0.35)
+        entry.motion = {
+          from: entry.outer.position.clone(),
+          to: to.clone().add(offset).setY(to.y + offset.y),
+          yawFrom: entry.outer.rotation.y,
+          yawTo: entry.outer.rotation.y + jitter(id, 9) * 0.08,
+          scaleFrom: entry.outer.scale.x,
+          scaleTo: entry.outer.scale.x,
+          t: 0,
+          profile,
+          done: () => {
+            this.remove(id)
+            if (--pending === 0) resolve()
+          },
+        }
+      }
+    })
+  }
+
+  private remove(id: string): void {
+    const entry = this.cards.get(id)
+    if (!entry) return
+    this.scene.remove(entry.outer)
+    disposeCard(entry.inner)
+    this.cards.delete(id)
+  }
+
+  private nearEdge(): THREE.Vector3 {
+    return new THREE.Vector3(0, 0.6, 5.6)
+  }
+
+  private wait(ms: number, gen: number): Promise<void> {
+    if (this.reducedMotion || gen !== this.generation) return Promise.resolve()
+    return new Promise(resolve => window.setTimeout(resolve, ms))
+  }
+
+  // --- turn light ----------------------------------------------------------------------
+
+  /** One fixed pool of lamplight per seat; the active one fades up only once the action
+   *  is over. v1's single light travelled across the table and announced the next turn
+   *  before the played card had even landed. */
+  private showTurn(snap: Snapshot): void {
+    if (this.glows.length !== snap.players.length) this.buildGlows(snap.players.length)
+    this.glowTarget = snap.phase === 'playing' ? snap.current : -1
+  }
+
+  private hideTurn(): void {
+    this.glowTarget = -1
+  }
+
+  private buildGlows(count: number): void {
+    for (const g of this.glows) this.scene.remove(g)
+    const tex = glowTexture()
+    this.glows = seatsFor(count).map(seat => {
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(4.8, 1.6),
+        new THREE.MeshBasicMaterial({ map: tex, color: 0xffd98a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }),
+      )
+      mesh.rotation.x = -Math.PI / 2
+      if (seat.side) mesh.rotation.z = Math.PI / 2
+      onSeat(seat, 0, seat.depth + (seat.side ? 0.1 : 0.2), 0.012, mesh.position)
+      this.scene.add(mesh)
+      return mesh
+    })
+    this.glowLevel = this.glows.map(() => 0)
+  }
+
+  // --- render loop -----------------------------------------------------------------------
 
   private loop(): void {
     if (this.disposed) return
     // Clamp: a background tab can hand back a multi-second delta and teleport everything.
     const dt = Math.min(0.05, this.clock.getDelta())
 
-    for (const e of this.cards.values()) {
-      e.t += dt
-      const t = clamp01(e.t / DEAL_DURATION)
-      if (t > 0) {
-        arcPosition(e.from, e.to, dealEase(t), DEAL_ARC_LIFT * 0.7 * (1 - t * 0.15), this.scratch)
-        e.group.position.copy(this.scratch)
-        // Closed-form yaw with a half-sine spin that is exactly 0 at both ends: the
-        // Blackjack fix for the "glitchy rotation" of a damped follow.
-        e.group.rotation.y = e.yawFrom + (e.yawTo - e.yawFrom) * easeOutCubic(t) + Math.sin(Math.PI * t) * DEAL_SPIN * 0.6
+    for (const entry of this.cards.values()) {
+      const m = entry.motion
+      if (m) {
+        m.t += dt
+        const raw = clamp01(m.t / m.profile.duration)
+        if (raw > 0) {
+          const t = m.profile.ease(raw)
+          entry.outer.position.lerpVectors(m.from, m.to, t)
+          // sin² lift: zero slope at both ends, so a card leaves and settles softly and
+          // never dips below its endpoints (v1's overshooting ease did).
+          entry.outer.position.y += m.profile.lift * Math.sin(Math.PI * raw) ** 2
+          entry.outer.rotation.y = m.yawFrom + (m.yawTo - m.yawFrom) * t + Math.sin(Math.PI * raw) * m.profile.spin
+          entry.outer.scale.setScalar(m.scaleFrom + (m.scaleTo - m.scaleFrom) * t)
+        }
+        if (raw >= 1) {
+          entry.motion = null
+          m.done?.()
+        }
       }
-      if (!e.landed && t >= 1) {
-        e.landed = true
-        this.sfx.cardLand()
-      }
-      if (e.flipT < FLIP_DURATION) {
-        e.flipT += dt
-        const ft = clamp01(e.flipT / FLIP_DURATION)
-        const target = e.faceDown ? Math.PI : 0
-        e.group.rotation.x = e.flipFrom + (target - e.flipFrom) * easeInOutCubic(ft)
-        // Lift through the turn; without it a flip reads as a spin.
-        e.group.position.y += Math.sin(ft * Math.PI) * FLIP_LIFT
-      }
-    }
-
-    for (let i = this.retiring.length - 1; i >= 0; i--) {
-      const r = this.retiring[i]!
-      r.t += dt
-      const t = clamp01(r.t / DISCARD_DURATION)
-      if (t > 0) {
-        arcPosition(r.from, r.to, easeInOutCubic(t), DISCARD_ARC_LIFT, this.scratch)
-        r.group.position.copy(this.scratch)
-        r.group.rotation.y = r.yawFrom + (r.yawTo - r.yawFrom) * t
-        // Shrink into the tray over the last quarter so the card joins the stack rather
-        // than popping out of existence on top of it.
-        const fade = t > 0.75 ? 1 - (t - 0.75) / 0.25 : 1
-        r.group.scale.setScalar(Math.max(0.02, fade))
-      }
-      if (t >= 1) {
-        this.scene.remove(r.group)
-        disposeCard(r.group)
-        this.retiring.splice(i, 1)
+      const f = entry.flip
+      if (f) {
+        f.t += dt
+        const ft = clamp01(f.t / f.duration)
+        const angle = f.from + (f.to - f.from) * easeInOutCubic(ft)
+        entry.inner.rotation.x = angle
+        // Edge clearance: a card turning about its centre sweeps its half-length below
+        // the pivot; lift by exactly that so it never cuts through the cloth.
+        entry.inner.position.y = (CH / 2 + 0.06) * Math.abs(Math.sin(angle))
+        if (ft >= 1) {
+          entry.flip = null
+          entry.inner.position.y = 0
+        }
       }
     }
 
-    if (this.turnT < 1) {
-      this.turnT = Math.min(1, this.turnT + dt / 0.45)
-      this.turnGlow.position.lerpVectors(this.turnFrom, this.turnTo, easeInOutCubic(this.turnT))
-    } else {
-      this.turnGlow.position.copy(this.turnTo)
-    }
+    this.glows.forEach((glow, i) => {
+      const target = i === this.glowTarget ? 1 : 0
+      const step = this.reducedMotion ? 1 : dt / GLOW_FADE
+      this.glowLevel[i] = this.glowLevel[i]! + Math.max(-step, Math.min(step, target - this.glowLevel[i]!))
+      ;(glow.material as THREE.MeshBasicMaterial).opacity = this.glowLevel[i]! * 0.12
+    })
+
     if (this.burnFlashT < 1) {
-      this.burnFlashT = Math.min(1, this.burnFlashT + dt / 0.9)
+      this.burnFlashT = Math.min(1, this.burnFlashT + dt / 0.4)
       const f = this.burnFlashT
-      // A quick bloom-up and a slower fade: the pile catches fire, then embers.
-      ;(this.burnFlash.material as THREE.MeshBasicMaterial).opacity = (f < 0.15 ? f / 0.15 : 1 - (f - 0.15) / 0.85) * 0.75
-      this.burnFlash.scale.setScalar(0.7 + easeOutCubic(f) * 0.6)
+      ;(this.burnFlash.material as THREE.MeshBasicMaterial).opacity = (f < 0.2 ? f / 0.2 : 1 - (f - 0.2) / 0.8) * 0.22
     } else {
       ;(this.burnFlash.material as THREE.MeshBasicMaterial).opacity = 0
     }
@@ -321,18 +570,17 @@ export class SkitgubbeScene {
     const w = Math.max(1, this.container.clientWidth)
     const h = Math.max(1, this.container.clientHeight)
     this.renderer.setSize(w, h)
-    // Re-solve the framing; a hard-coded camera breaks when the stage aspect changes.
     fitCamera(this.camera, w / h)
+    this.onResize?.()
   }
 
   dispose(): void {
     this.disposed = true
+    this.generation++
     cancelAnimationFrame(this.raf)
     this.ro.disconnect()
-    for (const entry of this.cards.values()) disposeCard(entry.group)
-    for (const r of this.retiring) disposeCard(r.group)
+    for (const entry of this.cards.values()) disposeCard(entry.inner)
     this.cards.clear()
-    this.retiring = []
     this.lights.dispose()
     disposeCardGeometry()
     disposeCardTextures()
@@ -341,7 +589,15 @@ export class SkitgubbeScene {
   }
 }
 
-function findCard(snap: Snapshot, id: string) {
+/** Yaw target equivalent to `to` but reached by the short way round from `from`. */
+function shortestYaw(from: number, to: number): number {
+  let d = (to - from) % (Math.PI * 2)
+  if (d > Math.PI) d -= Math.PI * 2
+  if (d < -Math.PI) d += Math.PI * 2
+  return from + d
+}
+
+function findCard(snap: Snapshot, id: string): TableCard | undefined {
   for (const p of snap.players) for (const c of [...p.hand, ...p.up, ...p.down]) if (c.id === id) return c
   return snap.pile.find(c => c.id === id)
 }

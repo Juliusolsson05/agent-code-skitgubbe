@@ -17,6 +17,7 @@ import { extensionViteConfig } from 'agent-code-extension-api'
 const preset = extensionViteConfig({ entries: {
   runtime: 'src/runtime.ts',
   view: 'src/view.ts',
+  lanView: 'src/lanView.tsx',
 } }) as UserConfig
 
 export default defineConfig({

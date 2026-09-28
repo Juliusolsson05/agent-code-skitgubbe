@@ -8,45 +8,42 @@ import type { Rules } from '../../game/engine/rules'
 // opening settings. Positions are passed in through the felt's UV↔world mapping; nothing
 // is eyeballed, for the same reason as Blackjack's TableLogo.
 
-const GOLD = '#f0e2b6'
+// Linen, printed faintly: signage for the table, never instructions (those are DOM).
+const GOLD = '#f3e3c3'
 
 export type TableLegendProps = {
   w: number
   h: number
   rules: Rules
-  drawLabel: { x: number; y: number }
-  burnLabel: { x: number; y: number }
   titleY: number
   rulesY: number
 }
 
 export function ruleSummary(rules: Rules): string[] {
   const specials = [
-    rules.twoResets && '2 RESETS',
-    rules.invisibleFive && 'INVISIBLE 5',
-    rules.sevenOrLower && '7 OR LOWER',
-    rules.tenBurns && '10 BURNS',
-    rules.fourBurns && 'FOUR OF A KIND BURNS',
+    rules.twoResets && '2 resets',
+    rules.invisibleFive && 'invisible 5',
+    rules.sevenOrLower && '7 or lower',
+    rules.tenBurns && '10 burns',
+    rules.fourBurns && 'four of a kind burns',
   ].filter(Boolean) as string[]
-  return specials.length ? specials : ['PLAY EQUAL OR HIGHER']
+  return specials.length ? specials : ['play equal or higher']
 }
 
-export function TableLegend({ w, rules, drawLabel, burnLabel, titleY, rulesY, h }: TableLegendProps) {
-  // Signage, not content: small and quiet, like a real table's printed rules.
+export function TableLegend({ w, rules, titleY, rulesY, h }: TableLegendProps) {
+  // Signage, not content: small and quiet. Printed in the house serif, sentence case,
+  // so it reads as a cloth's embroidery rather than casino signage.
   const title = Math.round(w * 0.024)
   const sub = Math.round(w * 0.0125)
-  const label = Math.round(w * 0.0105)
-  return (
+    return (
     <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h}>
-      <g textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
-        <text x={w / 2} y={titleY} fontSize={title} fontWeight={700} fill={GOLD} fillOpacity="0.5" letterSpacing={title * 0.12}>
-          SKITGUBBE
+      <g textAnchor="middle" fontFamily="'Iowan Old Style', Palatino, Georgia, serif">
+        <text x={w / 2} y={titleY} fontSize={title * 1.25} fontStyle="italic" fill={GOLD} fillOpacity="0.34">
+          Skitgubbe
         </text>
-        <text x={w / 2} y={rulesY} fontSize={sub} fontWeight={600} fill={GOLD} fillOpacity="0.42" letterSpacing={sub * 0.08}>
-          {ruleSummary(rules).join('  ·  ')}
+        <text x={w / 2} y={rulesY} fontSize={sub * 1.1} fill={GOLD} fillOpacity="0.36">
+          {ruleSummary(rules).join(',  ')}
         </text>
-        <text x={drawLabel.x} y={drawLabel.y} fontSize={label} fontWeight={600} fill={GOLD} fillOpacity="0.38" letterSpacing={label * 0.14}>DRAW</text>
-        <text x={burnLabel.x} y={burnLabel.y} fontSize={label} fontWeight={600} fill={GOLD} fillOpacity="0.38" letterSpacing={label * 0.14}>BURNED</text>
       </g>
     </svg>
   )

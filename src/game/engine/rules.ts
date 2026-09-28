@@ -11,7 +11,8 @@ export type Rules = {
   /** A 5 can go on anything and is see-through: the next card is judged against
    *  whatever lies under it. King, then 5, and the next player must still beat the king. */
   invisibleFive: boolean
-  /** A 2 can go on anything, and anything can go on a 2. Off: 2 is the lowest card. */
+  /** A 2 goes on anything; its player keeps the turn and plays any card on it.
+   *  Off: 2 is ordinary and passes the turn. Finishing still takes precedence. */
   twoResets: boolean
   /** A 10 can go on anything and burns the pile. Off: 10 is an ordinary card. */
   tenBurns: boolean

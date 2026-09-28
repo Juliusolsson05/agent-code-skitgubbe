@@ -1,170 +1,221 @@
-/* The table is the artwork; the rails around it belong to the host theme, the same
- * split Blackjack makes. Intrinsic dimensions are deliberate: the host measures and
- * scales the surface, and viewport clamps would create a sizing feedback loop. */
+/* Skitgubbe: a Swedish card evening, not a casino.
+ *
+ * Two layers, kept apart on purpose (the same split Mini Games makes):
+ * - The TABLE is artwork with its own palette: a slate-blue wool cloth, a pine rail,
+ *   red geometric card backs. It never follows the host theme.
+ * - The CHROME (header, decision bar, dialog) inherits Agent Code's theme tokens, so the
+ *   game sits inside the app instead of shouting over it.
+ * The one bold thing is the table. Everything else stays quiet: no all-caps eyebrows,
+ * no monospace labels, no breathing glows. Sizes follow an 8px rhythm; text is 14/12px.
+ *
+ * Intrinsic width is deliberate: the host sizes the modal from the measured content,
+ * and viewport-relative sizing would make that measurement depend on itself. */
 .sg-root {
+  /* chrome (host theme) */
   --sg-surface: var(--s1, #171b21);
   --sg-raised: var(--s2, #22272e);
-  --sg-border: var(--border, #30363f);
+  --sg-line: var(--border, rgba(255, 255, 255, .1));
+  --sg-line-strong: var(--border-hi, rgba(255, 255, 255, .22));
   --sg-text: var(--ink, #eef1f5);
   --sg-muted: var(--muted, #a3aab5);
   --sg-accent: var(--gold, #e3c56f);
   --sg-accent-ink: var(--gold-ink, #241a06);
-  --sg-win: color-mix(in srgb, #53b986 60%, var(--sg-text));
-  --sg-loss: color-mix(in srgb, #e7787c 60%, var(--sg-text));
+  --sg-focus: var(--focus, var(--sg-accent));
+  /* table art (fixed) */
+  --sg-cloth: #2c465a;
+  --sg-pine: #6e4b2c;
+  --sg-pine-dark: #4a3019;
+  --sg-falu: #8e2f24;
+  --sg-linen: #f3e3c3;
+  --sg-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+
   position: relative;
-  width: 900px;
+  /* Host measures this intrinsic size. Extra width is spent on four separate seats,
+   * while the shorter hand shelf leaves most of the surface for the actual table. */
+  width: 1240px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-radius: 14px;
   background: var(--sg-surface);
   color: var(--sg-text);
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.4;
   font-variant-numeric: tabular-nums;
-  box-shadow: inset 0 0 0 1px var(--sg-border);
+  box-shadow: inset 0 0 0 1px var(--sg-line);
   isolation: isolate;
 }
 .sg-root:focus { outline: none; }
-.sg-root:focus-visible { box-shadow: inset 0 0 0 2px var(--focus, var(--sg-accent)); }
-.sg-root button { font: inherit; }
-
-.sg-header { display: flex; align-items: center; gap: 10px; height: 58px; padding: 0 16px; }
-.sg-mark { flex: none; }
-.sg-heading { margin-right: auto; }
-.sg-heading > span { display: block; color: var(--sg-muted); font-size: 9px; letter-spacing: 1.7px; }
-.sg-heading h1 { margin: 1px 0 0; font-size: 21px; font-weight: 740; letter-spacing: -.6px; line-height: 23px; }
-.sg-records { display: flex; gap: 14px; margin: 0 10px 0 0; }
-.sg-records div { text-align: right; }
-.sg-records dt { color: var(--sg-muted); font-size: 9px; letter-spacing: .6px; }
-.sg-records dd { margin: 1px 0 0; font-size: 16px; font-weight: 700; }
-
-.sg-button {
-  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
-  min-height: 36px; padding: 8px 15px; border: 1px solid var(--sg-border); border-radius: 8px;
-  background: var(--sg-raised); color: var(--sg-text); white-space: nowrap; cursor: pointer;
-  font-weight: 620 !important; transition: transform .14s, filter .14s;
+.sg-root button { font: inherit; color: inherit; }
+.sg-root kbd {
+  display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 5px;
+  border: 1px solid currentColor; border-radius: 5px; font: 600 11px/1 inherit; opacity: .55;
 }
-.sg-button:hover:not(:disabled) { border-color: var(--border-hi, #67717d); filter: brightness(1.08); }
-.sg-button:active:not(:disabled) { transform: translateY(1px); }
-.sg-button:focus-visible { outline: 2px solid var(--focus, var(--sg-accent)); outline-offset: 3px; }
-.sg-button:disabled { opacity: .38; cursor: default; }
-.sg-button[aria-pressed="true"] { border-color: var(--sg-accent); box-shadow: inset 0 0 0 1px var(--sg-accent); background: var(--gold-soft, #e3c56f1c); }
-.sg-primary { color: var(--sg-accent-ink); background: var(--sg-accent); border-color: var(--sg-accent); }
-.sg-quiet, .sg-tool { background: transparent; }
-.sg-tool { width: 36px; padding: 8px; }
-.sg-tool[aria-pressed="true"] { box-shadow: none; border-color: var(--sg-border); background: transparent; }
-.sg-tool svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.sg-selected { border-color: var(--sg-accent) !important; }
-.sg-button kbd { font: 10px var(--code, ui-monospace, monospace); min-width: 17px; padding: 1px 3px; border: 1px solid currentColor; border-radius: 3px; opacity: .6; }
+
+/* --- header: quiet, one line ------------------------------------------------------ */
+.sg-header { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 12px 0 18px; border-bottom: 1px solid var(--sg-line); }
+.sg-mark { flex: none; }
+.sg-header h1 { margin: 0; font: 400 25px/1 var(--sg-serif); letter-spacing: .01em; }
+.sg-record { margin: 3px 0 0 6px; margin-right: auto; color: var(--sg-muted); font-size: 12px; }
+
+.sg-ghost, .sg-secondary, .sg-primary, .sg-icon {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid var(--sg-line);
+  background: transparent; cursor: pointer; white-space: nowrap; font-weight: 600 !important;
+  transition: background .12s, border-color .12s;
+}
+.sg-icon { width: 40px; padding: 0; }
+.sg-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sg-icon[aria-pressed="true"] { color: var(--sg-muted); }
+.sg-ghost { border-color: transparent; color: var(--sg-muted); }
+.sg-ghost:hover, .sg-icon:hover, .sg-secondary:hover:not(:disabled) { background: var(--sg-raised); border-color: var(--sg-line-strong); color: var(--sg-text); }
+.sg-secondary { height: 44px; background: var(--sg-raised); }
+.sg-primary { height: 44px; min-width: 176px; padding: 0 18px; justify-content: space-between; border-color: var(--sg-accent); background: var(--sg-accent); color: var(--sg-accent-ink) !important; }
+.sg-primary:hover:not(:disabled) { filter: brightness(1.06); }
+.sg-root button:disabled { opacity: .4; cursor: default; }
+.sg-root button:focus-visible { outline: 2px solid var(--sg-focus); outline-offset: 2px; }
 
 /* --- the table --------------------------------------------------------------------- */
-.sg-table { position: relative; height: 470px; overflow: hidden; background: #06100c; }
+.sg-table { position: relative; height: 600px; overflow: hidden; background: #141a1f; }
 .sg-scene { position: absolute; inset: 0; }
 .sg-scene canvas { display: block; width: 100%; height: 100%; }
-.sg-scene::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, #0004 100%); }
-.sg-scene-error { position: absolute; inset: 0; display: grid; place-items: center; padding: 40px; text-align: center; color: #d6e2da; background: radial-gradient(ellipse at center, #154a32, #071410); }
+/* The lamp's falloff, as a CSS vignette over the canvas (no post-processing in 3D). */
+.sg-scene::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 70% 75% at 50% 48%, transparent 55%, rgba(10, 8, 6, .45) 100%); }
+.sg-scene-error { position: absolute; inset: 0; display: grid; place-items: center; padding: 40px; color: var(--sg-linen); background: var(--sg-cloth); }
 
+/* Plates that belong to the table sit ON it: linen tags with pine-dark ink, anchored to
+ * projected seat positions, so an opponent's name is next to their cards, not in a corner. */
+.sg-seat, .sg-need, .sg-stack-count {
+  position: absolute; transform: translate(-50%, -50%); pointer-events: none; white-space: nowrap;
+}
 .sg-seat {
-  position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 6px 12px; border: 1px solid #ffffff22; border-radius: 16px; color: #eef1ea;
-  background: #0b171dd9; white-space: nowrap; pointer-events: none;
-  transition: border-color .25s, box-shadow .25s;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 3px 9px 4px; border-radius: 6px; background: rgba(243, 227, 195, .94); color: #3a2614;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .35); transition: box-shadow .16s;
 }
-.sg-seat strong { font-size: 12px; }
-.sg-seat span { font-size: 10px; color: #c2cbc9; }
-.sg-seat.is-turn { border-color: #f0d98a; box-shadow: 0 0 0 1px #f0d98a66, 0 0 18px #f0d98a44; }
-.sg-seat.is-out { opacity: .6; }
-.sg-seat-top { top: 10px; left: 50%; transform: translateX(-50%); }
-.sg-seat-left { left: 12px; top: 12px; }
-.sg-seat-right { right: 12px; top: 12px; }
+.sg-seat strong { display: flex; align-items: baseline; gap: 6px; font: 600 13px/1.15 var(--sg-serif); }
+.sg-seat em { font: italic 400 12px var(--sg-serif); color: var(--sg-falu); }
+.sg-seat span { font-size: 10px; color: #5b4430; }
+.sg-seat b { margin-left: 4px; font-weight: 700; color: #1f2430; }
+.sg-seat b.is-red { color: #a8261f; }
+.sg-seat.is-active { box-shadow: 0 0 0 2px #f6d27a, 0 2px 12px rgba(0, 0, 0, .4); }
+.sg-seat.is-out { opacity: .72; }
 
-/* A callout pops over the table and fades. It never covers the pile: the pile is
- * what the next decision depends on, so callouts sit in the upper third. */
+.sg-need {
+  /* Sits ABOVE the pile: below it, it covered the top card it describes. */
+  transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center;
+  padding: 4px 12px 5px; border-radius: 8px; background: rgba(20, 28, 36, .82); color: var(--sg-linen);
+}
+.sg-need strong { font: 600 15px/1.2 var(--sg-serif); }
+.sg-need span { font-size: 11px; color: #c9bba0; }
+.sg-stack-count { font: italic 12px var(--sg-serif); color: rgba(243, 227, 195, .78); text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+
+/* Callouts are for the few moments that matter (burns, finishes, a failed blind card).
+ * 160ms fade and a 4px rise, no overshoot; the queue guarantees each is readable. */
 .sg-callout {
-  position: absolute; left: 50%; top: 64px; transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  padding: 10px 22px; border-radius: 14px; border: 1px solid #ffffff26;
-  background: #0b171df0; color: #fff; pointer-events: none; text-align: center;
-  box-shadow: 0 12px 34px #0007;
-  animation: sg-pop 1.6s ease-out both;
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 22px 11px; border-radius: 10px; background: rgba(20, 28, 36, .92); color: var(--sg-linen);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45); pointer-events: none; animation: sg-in .16s ease-out both;
 }
-.sg-callout strong { font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
-.sg-callout span { font-size: 11px; color: #d0d8d4; }
-.sg-callout-burn { border-color: #ff9a4d; box-shadow: 0 0 30px #ff7a2e55, 0 12px 34px #0007; }
-.sg-callout-burn strong { color: #ffc27a; }
-.sg-callout-ghost strong { color: #bfe3ff; }
-.sg-callout-win strong { color: #9be3b8; }
-.sg-callout-loss strong { color: #ffaba9; }
-@keyframes sg-pop {
-  0% { opacity: 0; transform: translate(-50%, 8px) scale(.85); }
-  12% { opacity: 1; transform: translate(-50%, 0) scale(1.06); }
-  20% { transform: translate(-50%, 0) scale(1); }
-  80% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -6px) scale(.98); }
-}
+.sg-callout strong { font: 600 20px/1.2 var(--sg-serif); }
+.sg-callout span { font-size: 12px; color: #c9bba0; }
+.sg-callout.is-burn strong { color: #ffb574; }
+.sg-callout.is-win strong { color: #a9dfb9; }
+.sg-callout.is-loss strong { color: #f3a8a0; }
+@keyframes sg-in { from { opacity: 0; transform: translate(-50%, 4px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
-.sg-result { position: absolute; inset: 0; display: grid; place-items: center; background: #050b0899; backdrop-filter: blur(2px); animation: sg-fade .5s ease-out .6s both; }
-.sg-result-card { width: 330px; padding: 24px 24px 20px; border: 1px solid #e3c56f88; border-radius: 18px; text-align: center; background: linear-gradient(180deg, #16241df7, #0e1813f7); box-shadow: 0 18px 50px #0009; animation: sg-rise .4s ease-out .7s both; }
-.sg-result-card.is-loss { border-color: #e7787c88; }
-.sg-kicker { color: #c9d3cc; font-size: 9px; font-weight: 800; letter-spacing: .16em; }
-.sg-result-card h2 { margin: 8px 0 14px; font-size: 27px; letter-spacing: -.8px; }
-.sg-result-card ol { list-style: none; padding: 0; margin: 0 0 18px; text-align: left; }
-.sg-result-card li { display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-top: 1px solid #ffffff14; font-size: 13px; }
-.sg-result-card li > span { width: 34px; color: #b9c4bd; font-size: 11px; }
-.sg-result-card li em { margin-left: auto; font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .1em; color: #ffaba9; text-transform: uppercase; }
+.sg-result { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(12, 16, 20, .55); animation: sg-fade .3s ease-out both; }
+.sg-result-card { width: 380px; padding: 24px 28px 24px; border-radius: 12px; background: var(--sg-linen); color: #2e1f10; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+.sg-result-card h2 { margin: 0 0 16px; font: 400 28px/1.15 var(--sg-serif); }
+.sg-result-card.is-loss h2 { color: var(--sg-falu); }
+.sg-result-card ol { list-style: none; padding: 0; margin: 0 0 20px; }
+.sg-result-card li { display: flex; align-items: baseline; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(74, 48, 25, .18); font-size: 14px; }
+.sg-result-card li > span { width: 18px; color: #8a6d50; font-family: var(--sg-serif); }
+.sg-result-card li.is-you { font-weight: 700; }
+.sg-result-card li em { margin-left: auto; font: italic 13px var(--sg-serif); color: var(--sg-falu); }
+.sg-result-card .sg-primary { width: 100%; }
 @keyframes sg-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes sg-rise { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
 
-/* --- status, rail, actions ------------------------------------------------------------ */
-.sg-status { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 16px; border-top: 1px solid var(--sg-border); background: var(--bg, #10151a); }
-.sg-status > strong { font-size: 12px; white-space: nowrap; }
-.sg-status > span { color: var(--sg-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sg-pile-readout { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; font-size: 11px; white-space: nowrap; }
-.sg-pile-readout > span:last-child { color: var(--sg-muted); font-size: 9.5px; }
-.sg-pile-readout em { font-style: normal; color: var(--sg-accent); }
-.sg-red { color: var(--sg-loss); }
+/* --- your hand, resting on the table's near rail ------------------------------------- */
+.sg-hand {
+  position: relative; display: grid; grid-template-columns: 696px 216px 216px; justify-content: center; align-items: start; gap: 24px;
+  height: 176px; padding: 6px 24px 8px;
+  /* Pine: the rail the table art ends in, so your cards visibly rest on the same table. */
+  background:
+    repeating-linear-gradient(92deg, rgba(0, 0, 0, .05) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #7b5534, var(--sg-pine) 30%, var(--sg-pine-dark));
+  box-shadow: inset 0 10px 18px rgba(0, 0, 0, .35);
+  transition: box-shadow .2s;
+}
+.sg-hand.is-turn { box-shadow: inset 0 10px 18px rgba(0, 0, 0, .35), inset 0 0 0 2px rgba(246, 210, 122, .75); }
+.sg-row { min-width: 0; max-width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.sg-row.is-source .sg-row-label { color: #f6d27a; }
+.sg-batch-empty { height: 126px; display: grid; place-items: center; color: #c9bba0; font-style: italic; }
+.sg-row-up, .sg-row-down { border-left: 1px solid #f3e3c322; }
+.sg-row-label { color: rgba(243, 227, 195, .8); font: italic 13px var(--sg-serif); }
+.sg-hand-empty { align-self: center; margin: 0; color: var(--sg-linen); font: italic 15px var(--sg-serif); }
 
-.sg-rail { display: flex; align-items: flex-end; justify-content: center; gap: 0; height: 132px; padding: 12px 16px 8px; background: var(--sg-surface); }
-.sg-rail-slot { position: relative; display: flex; align-items: flex-end; }
-.sg-rail-label { align-self: center; margin-right: 10px; color: var(--sg-muted); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
-.sg-rail-label-up { margin-left: 20px; }
-.sg-rail-empty { align-self: center; color: var(--sg-muted); font-size: 12px; }
-/* Cards overlap more as a hand grows (after a pickup it can be twenty cards), but a
- * hovered or selected card always lifts clear so its index is readable. */
-.sg-card { position: relative; width: 74px; height: 104px; margin: 0 -6px; padding: 0; border: 0; border-radius: 7px; background: none; cursor: pointer; transition: transform .16s ease, filter .16s ease, margin .16s ease; filter: drop-shadow(0 3px 4px #0005); }
-.sg-rail:has(.sg-card:nth-of-type(1)) .sg-card { margin: 0 -6px; }
+.sg-fan { height: 142px; padding-top: 16px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.sg-fan-slot:hover, .sg-fan-slot:focus-within { z-index: 5; }
+.sg-fan::-webkit-scrollbar { display: none; }
+.sg-fan-inner { position: relative; height: 126px; }
+.sg-fan-slot { position: absolute; top: 0; width: 90px; height: 126px; }
+
+.sg-card {
+  position: relative; display: block; width: var(--card-width, 90px); height: calc(var(--card-width, 90px) * 1.4); padding: 0; border: 0; border-radius: 8px;
+  background: none; cursor: default; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .4));
+  transition: transform .14s ease-out;
+}
 .sg-card-art { display: block; width: 100%; height: 100%; }
-.sg-card[aria-disabled="true"] { cursor: default; filter: drop-shadow(0 2px 3px #0004) grayscale(.35) brightness(.72); }
-.sg-root[data-phase="swap"] .sg-card[aria-disabled="false"],
-.sg-card.is-playable:hover { transform: translateY(-8px); }
-.sg-card.is-selected { transform: translateY(-16px); filter: drop-shadow(0 0 0 var(--sg-accent)) drop-shadow(0 6px 10px #0007); }
-.sg-card.is-selected::after { content: ''; position: absolute; inset: -3px; border: 2px solid var(--sg-accent); border-radius: 9px; }
-.sg-card.is-up { margin-left: -2px; }
-.sg-card:focus-visible { outline: 2px solid var(--focus, var(--sg-accent)); outline-offset: 3px; z-index: 1; }
-.sg-root[data-turn="you"] .sg-card.is-playable { animation: sg-breathe 2.4s ease-in-out infinite; }
-@keyframes sg-breathe { 50% { filter: drop-shadow(0 3px 4px #0005) drop-shadow(0 0 6px #e3c56f66); } }
+.sg-card.is-playable { cursor: pointer; }
+/* Legal choices must be apparent before hovering. Only highlight on YOUR turn: the
+ * swap phase and opponents' turns still show normal, readable cards. Selection keeps
+ * its separate gold check, and keyboard focus keeps its blue ring. */
+.sg-hand.is-turn .sg-card.is-playable::before { content: ''; position: absolute; inset: 1px; border: 2px solid #9bd9ae; border-radius: 7px; pointer-events: none; z-index: 1; }
+.sg-hand.is-turn .sg-row.is-source .sg-card:not(.is-playable) { opacity: .58; }
+.sg-playable-hint { color: #bce8c9; font: 12px system-ui, sans-serif; }
+.sg-card.is-playable:hover { transform: translateY(-6px); }
+.sg-card.is-selected { transform: translateY(-12px); }
+.sg-card.is-selected::after { content: ''; position: absolute; inset: -3px; border: 2px solid #f6d27a; border-radius: 10px; }
+.sg-check { position: absolute; top: -9px; right: -7px; width: 20px; height: 20px; border-radius: 50%; background: #f6d27a; box-shadow: 0 1px 3px rgba(0, 0, 0, .4); }
+.sg-check::after { content: ''; position: absolute; left: 6px; top: 4px; width: 5px; height: 9px; border: solid #3a2614; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+/* Focus is a separate, cooler ring so it never reads as "selected". */
+.sg-root .sg-card:focus-visible { outline: 2px solid #9cd3ff; outline-offset: 4px; z-index: 2; }
+.sg-back-number { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); color: var(--sg-linen); font: 600 14px var(--sg-serif); }
+/* A card that can't go on the pile is not dimmed (v1 greyed your whole hand during bot
+ * turns, which read as broken); on your turn it simply doesn't lift, and says why. */
 
-.sg-actions { display: flex; align-items: center; justify-content: center; gap: 9px; height: 60px; padding: 0 16px 6px; background: var(--sg-surface); }
-.sg-actions .sg-primary { min-width: 150px; justify-content: space-between; }
-.sg-hint { color: var(--sg-muted); font-size: 11px; margin-right: 8px; }
-.sg-footer { display: flex; justify-content: space-between; gap: 12px; height: 26px; align-items: center; padding: 0 16px; border-top: 1px solid var(--sg-border); color: var(--sg-muted); font-size: 9.5px; background: var(--bg, #10151a); }
+/* --- decision bar ---------------------------------------------------------------------- */
+.sg-decision { display: flex; align-items: center; gap: 16px; min-height: 72px; padding: 12px 16px 12px 20px; border-top: 1px solid var(--sg-line); }
+.sg-decision-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sg-decision-text strong { font-size: 15px; font-weight: 650; }
+.sg-decision-text span { color: var(--sg-muted); font-size: 12px; min-height: 17px; }
+.sg-actions { display: flex; gap: 8px; }
 
-/* --- settings --------------------------------------------------------------------------- */
-.sg-settings { position: absolute; z-index: 5; top: 52px; right: 12px; width: 380px; max-height: 620px; overflow: auto; padding: 17px; border: 1px solid var(--border-hi, #454d55); border-radius: 12px; background: var(--sg-surface); box-shadow: 0 15px 50px #0008; animation: sg-rise .16s ease-out both; }
-.sg-settings-title { display: flex; align-items: center; justify-content: space-between; }
-.sg-settings-title h2 { margin: 0; font-size: 16px; }
-.sg-close { min-height: 26px; width: 26px; padding: 0; font-size: 18px; }
-.sg-settings > p { margin: 6px 0 14px; color: var(--sg-muted); font-size: 11px; line-height: 1.5; }
-.sg-players { margin: 0 0 12px; padding: 0; border: 0; }
-.sg-players legend { margin-bottom: 7px; padding: 0; font-size: 11px; font-weight: 650; }
-.sg-players > div { display: flex; gap: 5px; }
-.sg-players .sg-button { flex: 1; min-height: 32px; }
-.sg-rule-list { display: flex; flex-direction: column; border-top: 1px solid var(--sg-border); }
-.sg-rule { display: flex; align-items: flex-start; gap: 10px; padding: 9px 2px; border-bottom: 1px solid var(--sg-border); cursor: pointer; }
-.sg-rule input { margin: 2px 0 0; accent-color: var(--sg-accent); }
-.sg-rule strong { display: block; font-size: 12px; }
-.sg-rule em { display: block; margin-top: 2px; color: var(--sg-muted); font-size: 10.5px; font-style: normal; line-height: 1.45; }
-.sg-settings-actions { display: flex; justify-content: space-between; margin-top: 14px; }
+.sg-flights { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+.sg-flight { position: absolute; left: 0; top: 0; transform-origin: 0 0; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .45)); }
+.sg-flight svg { display: block; width: 100%; height: auto; }
+.sg-flight.is-packet > div svg { width: 100%; }
+
+/* --- house rules dialog ------------------------------------------------------------------ */
+.sg-dialog-backdrop { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(8, 10, 12, .5); animation: sg-fade .14s ease-out both; }
+.sg-dialog { display: flex; flex-direction: column; width: 420px; max-height: 620px; border-radius: 12px; border: 1px solid var(--sg-line-strong); background: var(--sg-surface); box-shadow: 0 24px 70px rgba(0, 0, 0, .55); }
+.sg-dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 4px 20px; }
+.sg-dialog-head h2 { margin: 0; font: 400 22px var(--sg-serif); }
+.sg-dialog-body { overflow: auto; padding: 0 20px; }
+.sg-dialog-body > p { margin: 0 0 16px; color: var(--sg-muted); font-size: 13px; }
+.sg-opponents { margin: 0 0 16px; padding: 0; border: 0; }
+.sg-opponents legend { margin-bottom: 8px; padding: 0; font-weight: 600; }
+.sg-opponents > div { display: flex; gap: 8px; }
+.sg-opponents button { flex: 1; height: 44px; border-radius: 9px; border: 1px solid var(--sg-line); background: var(--sg-raised); cursor: pointer; font-weight: 600; }
+.sg-opponents button[aria-pressed="true"] { border-color: var(--sg-accent); box-shadow: inset 0 0 0 1px var(--sg-accent); }
+.sg-rules { border-top: 1px solid var(--sg-line); }
+.sg-rule { display: flex; align-items: flex-start; gap: 12px; padding: 11px 2px; border-bottom: 1px solid var(--sg-line); cursor: pointer; }
+.sg-rule input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--sg-accent); flex: none; }
+.sg-rule strong { display: block; font-weight: 600; }
+.sg-rule em { display: block; margin-top: 2px; color: var(--sg-muted); font-size: 12px; font-style: normal; }
+.sg-dialog-foot { display: flex; justify-content: space-between; gap: 8px; padding: 16px 20px; border-top: 1px solid var(--sg-line); }
 
 @media (prefers-reduced-motion: reduce) {
   .sg-root *, .sg-root *::before, .sg-root *::after { animation: none !important; transition: none !important; }

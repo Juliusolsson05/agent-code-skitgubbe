@@ -25,10 +25,10 @@ export const CT = 0.038 // card thickness
 export const CARD_RADIUS = 0.092 // corner radius of the rounded stock (§8.2)
 
 // --- table (§8.1) ---
-export const FELT_W = 15.2
-export const FELT_D = 9.4
-export const TABLE_W = 17.6
-export const TABLE_D = 11.6
+export const FELT_W = 22
+export const FELT_D = 12.8
+export const TABLE_W = 23.4
+export const TABLE_D = 14.2
 export const TABLE_H = 0.9 // body thickness — real bulk, so the camera sees its sides
 export const RAIL_H = 0.42 // padded rail height above the felt
 export const TABLE_CORNER_R = 1.15
@@ -43,34 +43,39 @@ export const CARD_LIFT = 0.055
 export const CARD_STACK_STEP = 0.017
 
 // --- layout -------------------------------------------------------------------
-// Seats sit on the four sides of the felt; the play pile, the draw pile and the burn
-// tray share the centre line. Every number is checked against the felt's half extents
-// (7.6 × 4.7): a card is 1.42 × 1.99, so the outermost hand row at |z| = 3.6 or
-// |x| = 6.3 still ends inside the felt, and the side seats' table cards (inner edge
-// at |x| ≈ 3.9) clear the draw pile and burn tray (outer edges at |x| ≈ 3.0).
+// Four players need four independent card areas plus a centre lane for the piles.
+// Enlarging only the canvas scaled the old overlaps up: the old far row at z=-1.95
+// covered the draw labels, and the side hands crossed their own face-up cards. This
+// felt has half-extents 11 × 6.4. Side rows at |x|=7.7 leave the centre ±4.2 clear;
+// the outer hand edge is 10.6, still inside the felt. Far/near rows start outside
+// |z|=2.2, leaving room for the pile and its requirement above it. Keep these clearances
+// when changing card scale; the CSS modal and camera frame must grow together.
 
-/** Distance from the centre to a seat's face-down/face-up row. Top/bottom seats use the
- *  table's depth, side seats its width, so the two are tuned separately. */
-export const SEAT_TABLE_DEPTH = 2.15
-export const SEAT_TABLE_WIDTH = 4.85
-/** Extra distance from the table row out to the hand fan, toward the player's edge. */
-export const SEAT_HAND_OFFSET = 1.45
-/** Spacing of the three face-down/face-up slots. */
-export const SLOT_GAP = 1.7
+/** Distance from the centre to a seat's face-down/face-up row. Your row sits further
+ *  out (your hand is not on the table, so the near strip is free) and the far row
+ *  closer in, so the far bot's hand still fits inside the tighter camera frame. */
+export const SEAT_TABLE_DEPTH_BOTTOM = 3.65
+export const SEAT_TABLE_DEPTH_TOP = 3.35
+export const SEAT_TABLE_WIDTH = 7.7
+/** Extra distance from the table row out to a bot's hand fan, toward its edge. */
+export const SEAT_HAND_OFFSET = 1.9
+/** Spacing of the three face-down/face-up slots. Side seats run along the table's
+ *  depth with viewer-facing cards (1.99 tall), so they need the wider gap to not overlap. */
+export const SLOT_GAP = 1.9
+export const SLOT_GAP_SIDE = 2.3
+/** The pile is where every decision is read, so its cards render a touch larger. */
+export const PILE_SCALE = 1.12
 /** A face-up card sits slightly toward the centre so the face-down card under it peeks out. */
 export const UP_NUDGE = 0.16
 /** Widest spacing between a bot's hand cards, and the longest the fan may get before the
  *  cards overlap harder instead of spilling off the felt. */
 export const HAND_FAN_BOT = 0.42
 export const HAND_SPAN_BOT = 4.4
-/** Your hand is held off the near edge, out of frame (the rail below the table shows it). */
-export const SELF_HAND_OFFSET = 5.2
-export const SELF_HAND_Y = 2.2
 
 /** Centre pile, draw pile and burn tray (felt coordinates, y = 0). */
 export const PILE_POS = new THREE.Vector3(0, 0, 0)
-export const DRAW_POS = new THREE.Vector3(2.35, 0, 0)
-export const BURN_POS = new THREE.Vector3(-2.35, 0, 0)
+export const DRAW_POS = new THREE.Vector3(3.4, 0, 0)
+export const BURN_POS = new THREE.Vector3(-3.4, 0, 0)
 /** How tall the full 52-card draw block is. Exaggerated for the same reason Blackjack's
  *  shoe is: from 17° off vertical, true-scale stack height is invisible. */
 export const DECK_BLOCK_H = 0.9
@@ -81,8 +86,8 @@ export const DECK_BLOCK_H = 0.9
  * at, and shrinks the cards correspondingly. We show enough rail to read the table as an
  * object and spend the rest of the frame on the play area.
  */
-export const FRAME_W = FELT_W + 0.9
-export const FRAME_D = FELT_D + 0.9
+export const FRAME_W = 22.6
+export const FRAME_D = 13.2
 
 // --- camera (§4) ---
 /** Elevation above the horizon. 73° = 17° off vertical: bird's-eye with a slight tilt. */
@@ -91,7 +96,7 @@ export const CAM_ELEVATION_DEG = 73
  *  what makes the table readable; a wide lens up close was the "annoying" perspective. */
 export const CAM_FOV = 30
 /** Framing slack around the table. */
-export const CAM_MARGIN = 1.06
+export const CAM_MARGIN = 1.025
 
 // --- lighting calibration (§5.1) ---
 /** The brightest diffuse surface must land here (linear, pre-tone-map). Exceeding ~1.0

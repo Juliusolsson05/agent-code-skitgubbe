@@ -79,7 +79,7 @@ function getDecalGeometry(): THREE.PlaneGeometry {
  * parts stay welded. Geometry is shared/cached; only the two decal materials are
  * per-card (they carry this rank+suit's texture).
  */
-export function makeCard(rank: Rank, suit: Suit): THREE.Group {
+export function makeCard(rank?: Rank, suit?: Suit): THREE.Group {
   const group = new THREE.Group()
 
   const stock = new THREE.Mesh(getStockGeometry(), cardStockMaterial())
@@ -89,7 +89,7 @@ export function makeCard(rank: Rank, suit: Suit): THREE.Group {
 
   const lift = CT / 2 + 0.0008
 
-  const face = new THREE.Mesh(getDecalGeometry(), cardFaceMaterial(rank, suit))
+  const face = new THREE.Mesh(getDecalGeometry(), rank && suit ? cardFaceMaterial(rank, suit) : cardStockMaterial())
   face.rotation.x = -Math.PI / 2 // lie flat, facing +Y
   face.position.y = lift
   face.receiveShadow = true
