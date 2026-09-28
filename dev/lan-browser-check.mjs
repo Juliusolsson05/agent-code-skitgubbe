@@ -1,12 +1,25 @@
 import assert from 'node:assert/strict'
 import { build } from 'esbuild'
-import { mkdtemp, rm, mkdir } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
+const fixture = JSON.parse(await readFile(new URL('../tests/fixtures/lan-game.json', import.meta.url), 'utf8'))
 const temp = await mkdtemp(join(tmpdir(),'sg-lan-browser-'))
-await build({entryPoints:['server/http.ts'],bundle:true,platform:'node',format:'esm',outfile:join(temp,'http.mjs'),logLevel:'warning'})
+await build({entryPoints:['server/http.ts'],bundle:true,platform:'node',format:'esm',outfile:join(temp,'http.mjs'),logLevel:'warning',plugins:[{
+ name:'recorded-lan-deal',setup(build) {
+   // CI recorded60 accepted actions before a random game exceeded600s. Replay
+   // a recorded full deck; only constructor input changes in this temporary host
+   // bundle. Authority, private projections and both clients remain production code.
+   build.onLoad({filter:/[/\\]server[/\\]room\.ts$/},async ({path})=>{
+     const text=await readFile(path,'utf8')
+     const needle='new SkitgubbeGame({ players:'
+     assert.ok(text.includes(needle),'recorded deal injection matches room constructor')
+     return {contents:text.replace(needle,`new SkitgubbeGame({ deck: ${JSON.stringify(fixture.deck)}.map(id=>newDeck().find(c=>c.id===id)!), players:`),loader:'ts'}
+   })
+ }
+}]})
 const {startLanHost} = await import(pathToFileURL(join(temp,'http.mjs')).href)
 const host = await startLanHost({assets:pathToFileURL(resolve('lan-dist')+'/')})
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH || undefined,args:['--mute-audio']})
@@ -67,8 +80,8 @@ try {
    const before=states[index].revision
    const cards=p.locator('.sg-card.is-playable')
    if(await cards.count()) {
-     // Use the public controls. Random legal choices avoid an artificial
-     // always-lowest pickup cycle; the host still validates every action.
+     // Same public selection policy used to record the fixture: last legal
+     // every seventh action, first legal otherwise; shift selects equal ranks.
      const at=turns%7===0 ? (await cards.count())-1 : 0
      const c=cards.nth(at)
      if(states[index].source==='down') await c.click()
@@ -84,6 +97,7 @@ try {
    if (turns % 20 === 0) console.log(`LAN progress: ${turns} actions`)
  }
  await Promise.all(pages.map(settled))
+ assert.equal(turns,fixture.humanTurns,'LAN replay matches the recorded full game')
  assert.equal(states[0].snapshot.gameId,states[1].snapshot.gameId)
  await a.screenshot({path:'test-results/lan-result.png'})
  console.log(`PASS LAN full game: ${turns} human actions, separate seats, private payloads, refresh rejoin`)

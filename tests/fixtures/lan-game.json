@@ -1,0 +1,499 @@
+{
+  "provenance": "Production-engine contract probe, LCG seed 773. Two human seats, no setup swaps. Same first-legal/all-rank policy as LAN browser driver; last legal every seventh action.",
+  "deck": [
+    "JC",
+    "JS",
+    "10C",
+    "6H",
+    "6C",
+    "5H",
+    "JD",
+    "4C",
+    "KC",
+    "3S",
+    "AD",
+    "7S",
+    "QS",
+    "AH",
+    "10S",
+    "7D",
+    "4H",
+    "6D",
+    "10D",
+    "2S",
+    "9C",
+    "AS",
+    "9S",
+    "KS",
+    "QD",
+    "9D",
+    "AC",
+    "10H",
+    "7C",
+    "3H",
+    "7H",
+    "QH",
+    "QC",
+    "8S",
+    "4S",
+    "3C",
+    "2C",
+    "8H",
+    "8C",
+    "5D",
+    "5S",
+    "JH",
+    "5C",
+    "8D",
+    "KD",
+    "KH",
+    "4D",
+    "2D",
+    "2H",
+    "6S",
+    "9H",
+    "3D"
+  ],
+  "humanTurns": 48,
+  "trace": [
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QS"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AH"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10D",
+          "10S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9C",
+          "9S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KS"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AC",
+          "AS"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7D",
+          "7H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QC",
+          "QD",
+          "QH"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7C",
+          "7D",
+          "7H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2C"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3C"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8C",
+          "8H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9D"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5C",
+          "5S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QC",
+          "QD",
+          "QH"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KD"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4D"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JH"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KH"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6S"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "9H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JD"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2C",
+          "2D",
+          "2H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3C",
+          "3D",
+          "3H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "KC"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5C",
+          "5D",
+          "5S"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AD"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "flip",
+        "id": "JC"
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2C",
+          "2D",
+          "2H"
+        ]
+      }
+    },
+    {
+      "player": 1,
+      "move": {
+        "type": "play",
+        "ids": [
+          "3C",
+          "3D",
+          "3H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "flip",
+        "id": "10C"
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "flip",
+        "id": "6C"
+      }
+    }
+  ]
+}

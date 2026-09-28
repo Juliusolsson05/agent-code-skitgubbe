@@ -52,3 +52,18 @@ Run36368213334 completed gameplay but failed the record assertion: actual
 scenario can complete and persist a result before navigation on slower runners.
 The keyboard scenario now captures its starting record and verifies exactly one
 additional completed game, preserving persistence and duplicate-result detection.
+
+LAN evidence: run36368147186 logged20/40/60 accepted moves at02:07:21,
+02:10:07,02:13:02, then reached its ten-minute budget at02:14:46. There
+was ongoing progress, not an awaiting-state stall. Native full games passed
+at86 and90 actions. The random-deal driver has no bounded move count.
+Next stage: record a two-human production-engine game with the SAME public
+selection policy, then replay its deal through the existing HTTP/browser driver
+and assert the recorded terminal action count. Preserve all privacy, reconnect,
+ready, rematch and end-room checks. Separate recording from UI replay so engine
+and transport evidence are independently inspectable. No product hook is added.
+Recorded fixture: production engine LCGseed773, full52-card deck,48 actions.
+The native two-browser replay matched exactly48 actions and passed privacy,
+refresh, Step away/Resume, simultaneous Ready, rematch and room closure.
+Only temporary esbuild constructor input is injected; shipped artifacts stay
+byte-identical to the merged release candidate.
