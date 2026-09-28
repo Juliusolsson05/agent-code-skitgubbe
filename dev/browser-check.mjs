@@ -10,7 +10,7 @@ const server = await createServer({ configFile: 'vite.dev.config.ts', cacheDir: 
 await server.listen()
 const base = server.resolvedUrls.local[0]
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || undefined, args: ['--mute-audio'] })
-const context = await browser.newContext({ viewport: { width: 1440, height: 1050 }, reducedMotion: 'reduce' })
+const context = await browser.newContext({ viewport: { width: 1440, height: 1050 }, deviceScaleFactor: process.env.CI ? 0.5 : 1, reducedMotion: 'reduce' })
 const page = await context.newPage()
 page.setDefaultTimeout(30000)
 // Observe the actual scene entry point without exposing a test API in the product.
@@ -129,9 +129,13 @@ try {
   await page.getByRole('button', { name: 'Start the game', exact: true }).click()
   console.log('STARTED full keyboard game')
   let turns = 0
-  const deadline = Date.now() + 180000
+  // Hosted runners rasterize Three.js in software. Recorded Linux run spent
+  // 164s on three static layouts and 126s on two setups; its 180s game budget
+  // expired while the same keyboard playthrough passed on native Chrome.
+  // Keep all completion/legality assertions, but bound CI by ten minutes.
+  const deadline = Date.now() + (process.env.CI ? 600000 : 180000)
   while (await page.locator('.sg-root').getAttribute('data-phase') !== 'over') {
-    assert.ok(Date.now() < deadline, 'game completes without stalling')
+    assert.ok(Date.now() < deadline, 'keyboard game exceeded its acceptance time budget')
     await settled()
     if (await page.locator('.sg-root').getAttribute('data-turn') !== 'you') {
       await page.waitForTimeout(100)

@@ -11,7 +11,7 @@ const {startLanHost} = await import(pathToFileURL(join(temp,'http.mjs')).href)
 const host = await startLanHost({assets:pathToFileURL(resolve('lan-dist')+'/')})
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH || undefined,args:['--mute-audio']})
 const errors=[]
-const contexts=await Promise.all([0,1].map(()=>browser.newContext({viewport:{width:1440,height:1050},reducedMotion:'reduce'})))
+const contexts=await Promise.all([0,1].map(()=>browser.newContext({viewport:{width:1440,height:1050},deviceScaleFactor:process.env.CI ? 0.5 : 1,reducedMotion:'reduce'})))
 const pages=await Promise.all(contexts.map(c=>c.newPage()))
 const states=[null,null]
 for(const [i,p] of pages.entries()) {
