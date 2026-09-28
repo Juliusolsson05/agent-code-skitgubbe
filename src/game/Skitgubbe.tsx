@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import type { SkitgubbeApi } from '../api'
 import { CardBack } from '../assets/svg/CardBack'
 import { CardFace } from '../assets/svg/CardFace'
-import { applyMove, chooseMove, prepareBot, type Move } from './bot'
+import { applyMove, BOT_LEVEL_OPTIONS, chooseMove, DEFAULT_BOT_LEVEL, observeBot, prepareBot, type BotLevel, type Move } from './bot'
 import type { GameAudio } from './audio'
 import { cardLabel, cardName, RANK_VALUE, type Card, type Rank } from './engine/cards'
 import { MAX_PLAYERS, MIN_PLAYERS, SkitgubbeGame, type GameEvent, type Snapshot } from './engine/game'
@@ -32,17 +32,18 @@ const FLIGHT_PLAY_MS = 280
 const FLIGHT_RECEIVE_MS = 260
 const FLIGHT_PACKET_MS = 340
 
-export type Settings = { players: number; rules: Rules }
+export type Settings = { players: number; rules: Rules; bots: BotLevel }
 export type Records = { games: number; wins: number; skitgubbe: number }
 
-const DEFAULT_SETTINGS: Settings = { players: 3, rules: { ...DEFAULT_RULES } }
+const DEFAULT_SETTINGS: Settings = { players: 3, rules: { ...DEFAULT_RULES }, bots: DEFAULT_BOT_LEVEL }
 const EMPTY_RECORDS: Records = { games: 0, wins: 0, skitgubbe: 0 }
 
 export function parseSettings(value: unknown): Settings {
   const input = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
   const players = typeof input.players === 'number' && Number.isInteger(input.players)
     ? Math.max(MIN_PLAYERS, Math.min(MAX_PLAYERS, input.players)) : DEFAULT_SETTINGS.players
-  return { players, rules: parseRules(input.rules) }
+  const bots = [1, 2, 3, 4, 5].includes(input.bots as number) ? input.bots as BotLevel : DEFAULT_SETTINGS.bots
+  return { players, rules: parseRules(input.rules), bots }
 }
 
 function parseRecords(value: unknown): Records {
@@ -245,6 +246,10 @@ export function Skitgubbe({ api, audio }: { api: SkitgubbeApi; audio: GameAudio 
   /** Run one engine action through the table. Everything the player sees goes through
    *  here, serialised, so two animations never overlap and nothing acts mid-flight. */
   const run = useCallback((prev: Snapshot | null, next: Snapshot, events: GameEvent[]) => {
+    // Every public action feeds the bots' shared ledger before anything else: plays,
+    // pickups, burns, reveals and setup swaps are what a counting bot is allowed to
+    // know. Level-5 bots read it; lower levels simply ignore it.
+    if (gameRef.current) observeBot(gameRef.current, prev ?? next, next, events)
     busyRef.current = true
     setBusy(true)
     viewRef.current = next
@@ -308,11 +313,13 @@ export function Skitgubbe({ api, audio }: { api: SkitgubbeApi; audio: GameAudio 
   const newGame = useCallback((next: Settings = settingsRef.current) => {
     const game = new SkitgubbeGame({ players: next.players, rules: next.rules })
     gameRef.current = game
-    // Bots arrange their table at once; the deal waits only for you.
+    // Bots arrange their table at once; the deal waits only for you. Their setup
+    // swaps are public: feed the events to the ledger instead of discarding them.
     for (let p = 1; p < next.players; p++) {
-      prepareBot(game, p)
+      prepareBot(game, p, next.bots)
     }
-    game.takeEvents()
+    const opening = game.getSnapshot()
+    observeBot(game, opening, opening, game.takeEvents())
     setSelected([])
     setSwapPick(null)
     setFocusIndex(0)
@@ -413,7 +420,7 @@ export function Skitgubbe({ api, audio }: { api: SkitgubbeApi; audio: GameAudio 
     const pause = spectating ? BOT_PAUSE_SPECTATING_MS : lastWasBurn.current ? BOT_PAUSE_AFTER_BURN_MS : BOT_PAUSE_MS
     const timer = window.setTimeout(() => {
       if (gameRef.current !== game || busyRef.current) return
-      const move: Move = chooseMove(game, current)
+      const move: Move = chooseMove(game, current, settingsRef.current.bots)
       const prev = game.getSnapshot()
       if (applyMove(game, current, move)) run(prev, game.getSnapshot(), game.takeEvents())
     }, pause + (spectating ? 0 : BOT_THINK_MS))
@@ -653,7 +660,7 @@ export function Skitgubbe({ api, audio }: { api: SkitgubbeApi; audio: GameAudio 
   const shown = settled ?? view
   const need = shown && shown.phase === 'playing' ? requirement(shown) : null
   const decision = decisionText(view, settled, busy, yourTurn, source, legal.size, game, lastAction)
-  const pending = view && JSON.stringify(settings) !== JSON.stringify({ players: view.players.length, rules: view.rules })
+  const pending = view && JSON.stringify({ players: settings.players, rules: settings.rules }) !== JSON.stringify({ players: view.players.length, rules: view.rules })
   const nothingFits = yourTurn && source !== 'down' && legal.size === 0
   const primary = !view ? null
     : view.phase === 'over' ? null
@@ -856,6 +863,10 @@ function SettingsDialog({ settings, pending, onChange, onClose, onApply }: {
           <p>Every family plays it a little differently. Changes apply from the next game.</p>
           <fieldset className="sg-opponents"><legend>Opponents</legend>
             <div>{[1, 2, 3].map(n => <button key={n} type="button" aria-pressed={settings.players === n + 1} onClick={() => onChange({ ...settings, players: n + 1 })}>{n}</button>)}</div>
+          </fieldset>
+          <fieldset className="sg-opponents"><legend>Bots</legend>
+            <div>{BOT_LEVEL_OPTIONS.map(o => <button key={o.level} type="button" aria-pressed={settings.bots === o.level} title={o.blurb} onClick={() => onChange({ ...settings, bots: o.level })}>{o.level}</button>)}</div>
+            <em className="sg-bot-blurb">{BOT_LEVEL_OPTIONS.find(o => o.level === settings.bots)?.title} — {BOT_LEVEL_OPTIONS.find(o => o.level === settings.bots)?.blurb}</em>
           </fieldset>
           <div className="sg-rules">
             {RULE_ROWS.map(row => (

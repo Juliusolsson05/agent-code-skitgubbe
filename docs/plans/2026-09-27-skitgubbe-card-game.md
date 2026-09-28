@@ -238,3 +238,22 @@ release; publish the verified feature commit after CI. Agent Code install.ts
 resolveSource prefers releases/latest's source archive, so this release is
 installable without merging the PR. The PR remains open for explicit merge
 approval. Installed Electron and two physical devices are the manual QA boundary.
+
+## Bot value engine (owner request, post-release)
+
+Replaced the flat keep-value bot with a five-level capability ladder built on zone
+values (hand = tempo zone, face-up = survival zone, wild-last-before-flips is the
+biggest endgame lever). Setup now balances hand/face-up and plays the stacking game.
+Turn play: finish → threats (assigned minimal denial; forced-win hands are raced,
+not blocked) → flip pipeline → tempo → chance EV. Level 5 counts every publicly
+seen card (pickups and setup swaps included — swaps are public per owner ruling)
+and cooperates by keeping the pile low for the defender seat, trusting it until a
+witnessed wasted block (human or bot). Memory is deliberately human-scale: no hand
+reconstruction, deck draws stay unknown.
+
+Ladder finalized from simulation data (docs/decomposition/bot-ladder-data.md):
+level 1 is dramatically weakest, level 2 captures the fundamentals cliff, levels
+3–5 add measured refinements (denial ~0.02 place, refined pipeline ~0.03, tracking
+~0.025). Three infinite pickup wars were found and fixed with least-tried/coarse
+recency guards applied to every play selection. Bot level is a setting (default 4).
+Keyboard fixture re-recorded (27 human turns) and replayed through the real UI.

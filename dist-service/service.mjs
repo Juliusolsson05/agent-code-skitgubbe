@@ -309,6 +309,7 @@ var SkitgubbeGame = class {
       for (const c of group) delete player.upSlots[c.id];
       player.up.splice(Math.min(u, player.up.length), 0, card);
       player.upSlots[card.id] = slot;
+      this.events.push({ type: "swap", player: p, faceUp: card, toHand: group });
     }
     return true;
   }

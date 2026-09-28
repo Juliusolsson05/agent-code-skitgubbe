@@ -16,7 +16,8 @@
     "build:lan": "vite build --config vite.lan.config.ts && node dev/build-lan.mjs",
     "build:service": "esbuild server/service.ts server/main.ts --bundle --platform=node --format=esm --target=node22 --outdir=dist-service --out-extension:.js=.mjs",
     "lan": "node dist-service/main.mjs --lan",
-    "test:lan-browser": "node dev/lan-browser-check.mjs"
+    "test:lan-browser": "node dev/lan-browser-check.mjs",
+    "bench:bots": "node dev/bot-lab.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

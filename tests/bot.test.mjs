@@ -31,10 +31,17 @@ test('bots finish every game with only legal moves, for every player count and s
   }
 })
 
-test('a bot sheds its cheapest fitting card, all copies, and keeps its wild cards', () => {
+test('facing one hidden last card, a bot denies with its highest ordinary card', () => {
+  // The old bot shed its cheapest pair here and lost on the spot to any hidden high
+  // card. The owner's correction: with an opponent on one card, play high. 9 is this
+  // hand's highest ordinary card; the 2 and 10 never deny (wild tops admit everything).
   const game = new SkitgubbeGame({ players: 2, rules: { ...DEFAULT_RULES, swapPhase: false } })
   game.setup({ players: [{ hand: ['6S', '6H', '9C', '2D', '10D'] }, { hand: ['KC'] }], pile: ['4C'] })
-  assert.deepEqual(chooseMove(game, 0), { type: 'play', ids: ['6S', '6H'] })
+  assert.deepEqual(chooseMove(game, 0), { type: 'play', ids: ['9C'] })
+  // With no opponent close to going out, the same hand goes back to shedding its set.
+  const quiet = new SkitgubbeGame({ players: 2, rules: { ...DEFAULT_RULES, swapPhase: false } })
+  quiet.setup({ players: [{ hand: ['6S', '6H', '9C', '2D', '10D'] }, { hand: ['KC', '4D', '7D'] }], pile: ['4C'] })
+  assert.deepEqual(chooseMove(quiet, 0), { type: 'play', ids: ['6S', '6H'] })
 })
 
 test('a bot uses a 10 to finish on the same turn, regardless of pile size', () => {
@@ -88,4 +95,7 @@ test('changing hidden ranks with the same public counts never changes the bot ch
   }
   assert.deepEqual(choices[0], choices[1])
   assert.deepEqual(choices[1], choices[2])
+  // The opponent's single card is hidden: deny with the king (only aces and wilds
+  // beat it), never with the 4 that happens to sit over an unknown face-down card.
+  assert.deepEqual(choices[0], { type: 'play', ids: ['KS'] })
 })

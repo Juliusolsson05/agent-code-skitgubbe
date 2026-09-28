@@ -54,7 +54,7 @@
     "7H",
     "AS"
   ],
-  "humanTurns": 19,
+  "humanTurns": 27,
   "trace": [
     {
       "player": 2,
@@ -175,16 +175,7 @@
     {
       "player": 2,
       "move": {
-        "type": "chance"
-      }
-    },
-    {
-      "player": 3,
-      "move": {
-        "type": "play",
-        "ids": [
-          "10D"
-        ]
+        "type": "pickup"
       }
     },
     {
@@ -219,7 +210,8 @@
       "move": {
         "type": "play",
         "ids": [
-          "JD"
+          "QS",
+          "QC"
         ]
       }
     },
@@ -228,27 +220,14 @@
       "move": {
         "type": "play",
         "ids": [
-          "2S"
-        ]
-      }
-    },
-    {
-      "player": 3,
-      "move": {
-        "type": "play",
-        "ids": [
-          "8C",
-          "8S"
+          "AS"
         ]
       }
     },
     {
       "player": 0,
       "move": {
-        "type": "play",
-        "ids": [
-          "9C"
-        ]
+        "type": "pickup"
       }
     },
     {
@@ -272,8 +251,26 @@
       "move": {
         "type": "play",
         "ids": [
-          "9S",
-          "9D"
+          "2S"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "10D"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "8C",
+          "8S"
         ]
       }
     },
@@ -282,7 +279,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "9H"
+          "5H"
         ]
       }
     },
@@ -317,16 +314,18 @@
       "move": {
         "type": "play",
         "ids": [
-          "7D",
-          "7H"
+          "6H"
         ]
       }
     },
     {
       "player": 3,
       "move": {
-        "type": "flip",
-        "id": "7C"
+        "type": "play",
+        "ids": [
+          "9S",
+          "9D"
+        ]
       }
     },
     {
@@ -334,7 +333,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "JS"
+          "9C"
         ]
       }
     },
@@ -350,7 +349,8 @@
       "move": {
         "type": "play",
         "ids": [
-          "JD"
+          "AC",
+          "AH"
         ]
       }
     },
@@ -358,7 +358,7 @@
       "player": 3,
       "move": {
         "type": "flip",
-        "id": "7S"
+        "id": "7C"
       }
     },
     {
@@ -391,19 +391,18 @@
       "move": {
         "type": "play",
         "ids": [
-          "7D",
-          "7H",
-          "7C",
-          "7S"
+          "9S",
+          "9D",
+          "9C"
         ]
       }
     },
     {
-      "player": 3,
+      "player": 0,
       "move": {
         "type": "play",
         "ids": [
-          "6S"
+          "9H"
         ]
       }
     },
@@ -421,8 +420,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "8C",
-          "8S"
+          "JD"
         ]
       }
     },
@@ -431,8 +429,8 @@
       "move": {
         "type": "play",
         "ids": [
-          "JS",
-          "JD"
+          "AC",
+          "AH"
         ]
       }
     },
@@ -441,7 +439,32 @@
       "move": {
         "type": "play",
         "ids": [
-          "QD"
+          "AS"
+        ]
+      }
+    },
+    {
+      "player": 2,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6S",
+          "6H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7D"
         ]
       }
     },
@@ -451,7 +474,8 @@
         "type": "play",
         "ids": [
           "AC",
-          "AH"
+          "AH",
+          "AS"
         ]
       }
     },
@@ -475,15 +499,18 @@
       "move": {
         "type": "play",
         "ids": [
-          "6H"
+          "4S",
+          "4D"
         ]
       }
     },
     {
       "player": 3,
       "move": {
-        "type": "flip",
-        "id": "JC"
+        "type": "play",
+        "ids": [
+          "7C"
+        ]
       }
     },
     {
@@ -500,25 +527,23 @@
       "move": {
         "type": "play",
         "ids": [
-          "5H"
-        ]
-      }
-    },
-    {
-      "player": 0,
-      "move": {
-        "type": "play",
-        "ids": [
           "JD"
         ]
       }
     },
     {
-      "player": 2,
+      "player": 3,
+      "move": {
+        "type": "flip",
+        "id": "7S"
+      }
+    },
+    {
+      "player": 0,
       "move": {
         "type": "play",
         "ids": [
-          "2S"
+          "6H"
         ]
       }
     },
@@ -527,7 +552,17 @@
       "move": {
         "type": "play",
         "ids": [
-          "9C"
+          "6D"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7C",
+          "7S"
         ]
       }
     },
@@ -536,7 +571,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "JS"
+          "7D"
         ]
       }
     },
@@ -547,6 +582,15 @@
         "ids": [
           "KC",
           "KS"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5D"
         ]
       }
     },
@@ -569,11 +613,17 @@
       }
     },
     {
+      "player": 3,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
       "player": 0,
       "move": {
         "type": "play",
         "ids": [
-          "AH"
+          "6S"
         ]
       }
     },
@@ -587,9 +637,32 @@
       }
     },
     {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "7C",
+          "7S",
+          "7D"
+        ]
+      }
+    },
+    {
       "player": 0,
       "move": {
-        "type": "pickup"
+        "type": "play",
+        "ids": [
+          "7H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JS"
+        ]
       }
     },
     {
@@ -600,11 +673,12 @@
       }
     },
     {
-      "player": 0,
+      "player": 3,
       "move": {
         "type": "play",
         "ids": [
-          "2S"
+          "KC",
+          "KS"
         ]
       }
     },
@@ -613,7 +687,7 @@
       "move": {
         "type": "play",
         "ids": [
-          "5D"
+          "AH"
         ]
       }
     },
@@ -629,6 +703,112 @@
       "move": {
         "type": "flip",
         "id": "4C"
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4S",
+          "4D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "QC"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AC",
+          "AD"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "AS"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "pickup"
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "6H",
+          "6D"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "2H"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "4C"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "play",
+        "ids": [
+          "JD"
+        ]
+      }
+    },
+    {
+      "player": 0,
+      "move": {
+        "type": "play",
+        "ids": [
+          "5D"
+        ]
+      }
+    },
+    {
+      "player": 3,
+      "move": {
+        "type": "flip",
+        "id": "JC"
       }
     }
   ]
