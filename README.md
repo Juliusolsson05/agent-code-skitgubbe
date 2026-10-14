@@ -7,6 +7,12 @@ Install `Juliusolsson05/agent-code-skitgubbe` through Agent Code's GitHub extens
 installer, then run **Play Skitgubbe** or **Play Skitgubbe with Friends**. The repository includes its built `dist/`
 entries because the host installs from the source archive.
 
+## Your agents, beside the table
+
+Both commands show a narrow **Agents** column next to the table. It lists every Agent Code agent that is working or has a notification: its title, its project folder, and the same badge Dispatch shows (NEW, ACTION, QUESTION, ERROR …). Agents waiting on you come first. The list updates live and is read-only; open the agent in Agent Code to act on it. Shell terminals and idle agents are left out.
+
+It uses the `sessions.observe` permission (session titles, folders and working/notification status), which Agent Code asks for when you install or update. It needs Agent Code with SDK 0.11.0 support; an older Agent Code shows "Update Agent Code to see your agents here." Friends joining a LAN game from a plain browser see no agent column.
+
 ## Our table rules
 
 - Deal three face-down cards, three face-up positions, and three cards in hand.
@@ -49,7 +55,9 @@ npm run test:browser
 ```
 
 The preview is at `http://localhost:5176/dev/`. `?build=production` loads the built
-extension instead of source. Set `CHROME_PATH` to use an existing Chrome binary.
+extension instead of source. `?agents=demo` fills the agent column with sample
+agents (`?agents=legacy` shows the older-host message) and `?view=friends` mounts the
+Friends modal. Set `CHROME_PATH` to use an existing Chrome binary.
 `npm run test:extension` sets production mode before building. Commit `dist/` after
 changes; a source-only extension cannot be installed by the host.
 

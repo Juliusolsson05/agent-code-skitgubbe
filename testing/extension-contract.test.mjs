@@ -16,7 +16,10 @@ test('the launch command opens exactly the host-routed modal view', () => {
     assert.equal(view?.mount, 'modal')
     assert.ok(manifest.activationEvents.includes(`onView:${command.id}`))
   }
-  assert.deepEqual(manifest.permissions, ['service.run','service.transport','net.listen','net.connect'])
+  // sessions.observe is the agent column's only power (#6): session titles,
+  // folders and working/notification status. Adding anything here changes what
+  // the install prompt asks the player, so it must stay a deliberate edit.
+  assert.deepEqual(manifest.permissions, ['service.run','service.transport','net.listen','net.connect','sessions.observe'])
   assert.equal(manifest.contributes.services[0].id, 'skitgubbe.lan-host')
 })
 

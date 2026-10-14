@@ -1,0 +1,72 @@
+/* The agent column (#6). Chrome, not artwork: it follows the host theme through the
+ * same --theme-* tokens the frame uses, with literal fallbacks for the plain dev
+ * harness. It never inherits the felt colours. */
+.sg-agents {
+  --ag-surface: var(--theme-surface, #171b21);
+  --ag-raised: var(--theme-surface-hi, #1f242c);
+  --ag-line: var(--theme-border, rgba(255, 255, 255, .09));
+  --ag-ink: var(--theme-ink, #e9edf2);
+  --ag-muted: var(--theme-muted, #9aa4b2);
+  --ag-accent: var(--theme-accent, #e3c56f);
+  --ag-working: var(--theme-success, #5fbf7f);
+  --ag-warning: var(--theme-warning, #f0a64a);
+
+  /* Fixed width: the host sizes the modal from the frame's measured width, so a
+   * width that depended on the viewport would depend on its own size. */
+  width: 232px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--ag-surface);
+  box-shadow: inset 0 0 0 1px var(--ag-line);
+  color: var(--ag-ink);
+  font: 13px/1.35 var(--theme-app-font, ui-sans-serif, system-ui, -apple-system, sans-serif);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sg-agents, .sg-agents * { box-sizing: border-box; }
+
+.sg-agents-head {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; padding: 0 16px; flex: none;
+  border-bottom: 1px solid var(--ag-line);
+  font-weight: 600; letter-spacing: .01em;
+}
+.sg-agents-count {
+  min-width: 22px; padding: 1px 7px; border-radius: 999px;
+  background: var(--ag-raised); color: var(--ag-muted);
+  font-size: 12px; font-weight: 600; text-align: center;
+}
+.sg-agents-empty { margin: 0; padding: 16px; color: var(--ag-muted); }
+
+/* Long lists scroll inside the column; the table never moves. */
+.sg-agents-list { list-style: none; margin: 0; padding: 6px; overflow-y: auto; min-height: 0; flex: 1; }
+.sg-agent {
+  display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 9px;
+}
+.sg-agent + .sg-agent { margin-top: 2px; }
+.sg-agent.is-attention { background: color-mix(in srgb, var(--ag-warning) 12%, transparent); }
+
+.sg-agent-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ag-line); }
+.sg-agent-dot.is-working { background: var(--ag-working); animation: sg-agent-pulse 1.6s ease-in-out infinite; }
+@keyframes sg-agent-pulse { 50% { opacity: .35; } }
+
+.sg-agent-text { display: flex; flex-direction: column; min-width: 0; }
+.sg-agent-title, .sg-agent-meta { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.sg-agent-meta { color: var(--ag-muted); font-size: 12px; }
+
+.sg-agent-badge {
+  padding: 2px 6px; border-radius: 5px; border: 1px solid;
+  font-size: 10px; font-weight: 700; line-height: 1.2; letter-spacing: .03em;
+}
+/* Same two families as Dispatch: warning for "blocked on you", accent for "done, unseen". */
+.sg-agent-badge.is-attention { color: var(--ag-warning); border-color: color-mix(in srgb, var(--ag-warning) 60%, transparent); background: color-mix(in srgb, var(--ag-warning) 16%, transparent); }
+.sg-agent-badge.is-output { color: var(--ag-accent); border-color: color-mix(in srgb, var(--ag-accent) 60%, transparent); background: color-mix(in srgb, var(--ag-accent) 16%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sg-agent-dot.is-working { animation: none; }
+}
