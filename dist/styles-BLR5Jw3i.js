@@ -24976,7 +24976,7 @@ function tm(t) {
   return { short: r === "Ace" ? "Ace only" : r, detail: i ? `Playing on the ${e}${i}` : void 0 };
 }
 const AI = (t) => [...t].sort((e, n) => Ei[e.rank] - Ei[n.rank] || e.suit.localeCompare(n.suit));
-function BI({ api: t, audio: e }) {
+function HI({ api: t, audio: e }) {
   const n = Oe.useRef(null), i = Oe.useRef(null), r = Oe.useRef(null), s = Oe.useRef(null), o = Oe.useRef(null), a = Oe.useRef(null), l = Oe.useRef(null), [u, c] = Oe.useState(null), [f, d] = Oe.useState(null), p = Oe.useRef(null), [g, y] = Oe.useState(/* @__PURE__ */ new Set()), [m, h] = Oe.useState(!0), _ = Oe.useRef(!0), [v, M] = Oe.useState(SM), b = Oe.useRef(v), [R, C] = Oe.useState(Q_), [P, Q] = Oe.useState([]), [x, E] = Oe.useState(0), [$, z] = Oe.useState(null), [W, re] = Oe.useState(null), H = Oe.useRef([]), [oe, D] = Oe.useState(""), [J, Z] = Oe.useState(""), [ae, Be] = Oe.useState(!1), [Ke, X] = Oe.useState(!1), se = Oe.useRef(!1), [ye, he] = Oe.useState(!1), [Ie, We] = Oe.useState(null), $e = Oe.useRef({ settings: !1, mute: !1, played: !1 }), Qe = Oe.useRef(null), te = Oe.useRef({ ...Q_ }), A = Oe.useRef(Promise.resolve()), pe = Oe.useRef(0), de = Oe.useRef(/* @__PURE__ */ new Map()), le = Oe.useRef(Promise.resolve()), me = Oe.useRef(!1), Ne = Oe.useCallback((k, Y) => {
     A.current = A.current.then(() => t.storage.set(k, Y)).catch(() => {
     });
@@ -25550,7 +25550,7 @@ function DI() {
   ] });
 }
 const nx = 0.5;
-class zI {
+class VI {
   ctx = null;
   master = null;
   noiseBuf = null;
@@ -25660,21 +25660,27 @@ class zI {
     }), this.ctx = null, this.master = null;
   }
 }
-const II = /* @__PURE__ */ new Set(["terminal", "extension-view"]), ix = (t) => t.notification?.kind === "attention" ? 0 : t.notification ? 1 : 2, MM = (t) => typeof t == "object" && t !== null && !Array.isArray(t);
-function NI(t) {
+const II = /* @__PURE__ */ new Set(["terminal", "extension-view"]), NI = {
+  claude: "Claude",
+  codex: "Codex",
+  opencode: "OpenCode",
+  grok: "Grok",
+  pi: "Pi"
+}, ix = (t) => t.notification?.kind === "attention" ? 0 : t.notification ? 1 : 2, MM = (t) => typeof t == "object" && t !== null && !Array.isArray(t);
+function kI(t) {
   return !MM(t) || t.kind !== "output" && t.kind !== "attention" || typeof t.label != "string" || !t.label.trim() ? null : { kind: t.kind, label: t.label.trim().slice(0, 12) };
 }
-const kI = (t) => (
+const UI = (t) => (
   // A null kind is a pre-kind session, and those were all Claude (the host's
   // Dispatch badge makes the same call).
-  t ? t.charAt(0).toUpperCase() + t.slice(1) : "Claude"
+  t ? NI[t] ?? t.charAt(0).toUpperCase() + t.slice(1) : "Claude"
 );
-function UI(t) {
+function FI(t) {
   if (typeof t != "string") return "";
   const e = t.split(/[\\/]+/).filter(Boolean);
   return e[e.length - 1] ?? t;
 }
-function FI(t) {
+function OI(t) {
   const e = Array.isArray(t) ? t.filter(MM) : [], n = e.length === 0 || e.some((r) => typeof r.activity == "string");
   if (!n) return { supported: n, rows: [] };
   const i = [];
@@ -25682,74 +25688,86 @@ function FI(t) {
     if (typeof r.id != "string") continue;
     const s = typeof r.kind == "string" ? r.kind : null;
     if (s && II.has(s)) continue;
-    const o = r.activity === "working", a = NI(r.notification);
+    const o = r.activity === "working", a = kI(r.notification);
     if (!o && !a) continue;
-    const l = typeof r.title == "string" && r.title.trim() ? r.title.trim() : `${kI(s)} agent`;
-    i.push({ id: r.id, title: l, project: UI(r.cwd), working: o, notification: a });
+    const l = typeof r.title == "string" && r.title.trim() ? r.title.trim() : `${UI(s)} agent`;
+    i.push({ id: r.id, title: l, project: FI(r.cwd), working: o, notification: a });
   }
   return i.sort((r, s) => ix(r) - ix(s) || r.title.localeCompare(s.title) || r.id.localeCompare(s.id)), { supported: n, rows: i };
 }
-const OI = ".sg-agents{--ag-surface: var(--theme-surface, #171b21);--ag-raised: var(--theme-surface-hi, #1f242c);--ag-line: var(--theme-border, rgba(255, 255, 255, .09));--ag-ink: var(--theme-ink, #e9edf2);--ag-muted: var(--theme-muted, #9aa4b2);--ag-accent: var(--theme-accent, #e3c56f);--ag-working: var(--theme-success, #5fbf7f);--ag-warning: var(--theme-warning, #f0a64a);width:232px;flex:none;display:flex;flex-direction:column;min-height:0;overflow:hidden;border-radius:14px;background:var(--ag-surface);box-shadow:inset 0 0 0 1px var(--ag-line);color:var(--ag-ink);font:13px/1.35 var(--theme-app-font, ui-sans-serif, system-ui, -apple-system, sans-serif);user-select:none;-webkit-user-select:none}.sg-agents,.sg-agents *{box-sizing:border-box}.sg-agents-head{display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px;flex:none;border-bottom:1px solid var(--ag-line);font-weight:600;letter-spacing:.01em}.sg-agents-count{min-width:22px;padding:1px 7px;border-radius:999px;background:var(--ag-raised);color:var(--ag-muted);font-size:12px;font-weight:600;text-align:center}.sg-agents-empty{margin:0;padding:16px;color:var(--ag-muted)}.sg-agents-list{list-style:none;margin:0;padding:6px;overflow-y:auto;min-height:0;flex:1}.sg-agent{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 10px;border-radius:9px}.sg-agent+.sg-agent{margin-top:2px}.sg-agent.is-attention{background:color-mix(in srgb,var(--ag-warning) 12%,transparent)}.sg-agent-dot{width:8px;height:8px;border-radius:50%;background:var(--ag-line)}.sg-agent-dot.is-working{background:var(--ag-working);animation:sg-agent-pulse 1.6s ease-in-out infinite}@keyframes sg-agent-pulse{50%{opacity:.35}}.sg-agent-text{display:flex;flex-direction:column;min-width:0}.sg-agent-title,.sg-agent-meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sg-agent-meta{color:var(--ag-muted);font-size:12px}.sg-agent-badge{padding:2px 6px;border-radius:5px;border:1px solid;font-size:10px;font-weight:700;line-height:1.2;letter-spacing:.03em}.sg-agent-badge.is-attention{color:var(--ag-warning);border-color:color-mix(in srgb,var(--ag-warning) 60%,transparent);background:color-mix(in srgb,var(--ag-warning) 16%,transparent)}.sg-agent-badge.is-output{color:var(--ag-accent);border-color:color-mix(in srgb,var(--ag-accent) 60%,transparent);background:color-mix(in srgb,var(--ag-accent) 16%,transparent)}@media (prefers-reduced-motion: reduce){.sg-agent-dot.is-working{animation:none}}";
-function HI({ sessions: t }) {
+function BI(t, e) {
+  let n = !0, i = !1, r = !1;
+  const s = async () => {
+    if (i) {
+      r = !0;
+      return;
+    }
+    i = !0;
+    try {
+      do {
+        r = !1;
+        try {
+          const a = await t.observe();
+          n && e({ kind: "ready", model: OI(a) });
+        } catch {
+          n && e({ kind: "failed" });
+        }
+      } while (n && r);
+    } finally {
+      i = !1;
+    }
+  };
+  s();
+  const o = t.subscribe(() => {
+    s();
+  });
+  return () => {
+    n = !1, o();
+  };
+}
+const zI = ".sg-agents{--ag-surface: var(--theme-surface, #171b21);--ag-raised: var(--theme-surface-hi, #1f242c);--ag-line: var(--theme-border, rgba(255, 255, 255, .09));--ag-ink: var(--theme-ink, #e9edf2);--ag-muted: var(--theme-muted, #9aa4b2);--ag-accent: var(--theme-accent, #e3c56f);--ag-working: var(--theme-success, #5fbf7f);--ag-warning: var(--theme-warning, #f0a64a);width:232px;flex:none;display:flex;flex-direction:column;min-height:0;overflow:hidden;border-radius:14px;background:var(--ag-surface);box-shadow:inset 0 0 0 1px var(--ag-line);color:var(--ag-ink);font:13px/1.35 var(--theme-app-font, ui-sans-serif, system-ui, -apple-system, sans-serif);user-select:none;-webkit-user-select:none}.sg-agents,.sg-agents *{box-sizing:border-box}.sg-agents-head{display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px;flex:none;border-bottom:1px solid var(--ag-line);font-weight:600;letter-spacing:.01em}.sg-agents-count{min-width:22px;padding:1px 7px;border-radius:999px;background:var(--ag-raised);color:var(--ag-muted);font-size:12px;font-weight:600;text-align:center}.sg-agents-empty{margin:0;padding:16px;color:var(--ag-muted)}.sg-agents-list{list-style:none;margin:0;padding:6px;overflow-y:auto;min-height:0;flex:1}.sg-agent{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 10px;border-radius:9px}.sg-agent+.sg-agent{margin-top:2px}.sg-agent.is-attention{background:color-mix(in srgb,var(--ag-warning) 12%,transparent)}.sg-agent-dot{width:8px;height:8px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--ag-muted)}.sg-agent-dot.is-working{box-shadow:none;background:var(--ag-working);animation:sg-agent-pulse 1.6s ease-in-out infinite}@keyframes sg-agent-pulse{50%{opacity:.35}}.sg-agent-text{display:flex;flex-direction:column;min-width:0}.sg-agent-title,.sg-agent-meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sg-agent-meta{color:var(--ag-muted);font-size:12px}.sg-agent-badge{padding:2px 6px;border-radius:5px;border:1px solid;font-size:10px;font-weight:700;line-height:1.2;letter-spacing:.03em}.sg-agent-badge.is-attention{color:var(--ag-warning);border-color:color-mix(in srgb,var(--ag-warning) 60%,transparent);background:color-mix(in srgb,var(--ag-warning) 16%,transparent)}.sg-agent-badge.is-output{color:var(--ag-accent);border-color:color-mix(in srgb,var(--ag-accent) 60%,transparent);background:color-mix(in srgb,var(--ag-accent) 16%,transparent)}@media (prefers-reduced-motion: reduce){.sg-agent-dot.is-working{animation:none}}";
+function GI({ sessions: t }) {
   const [e, n] = Oe.useState({ kind: "loading" });
   if (Oe.useEffect(() => {
-    if (!t) return;
-    let s = !0, o = !1, a = !1;
-    const l = async () => {
-      if (o) {
-        a = !0;
-        return;
-      }
-      o = !0;
-      try {
-        do {
-          a = !1;
-          try {
-            const c = await t.observe();
-            s && !a && n({ kind: "ready", model: FI(c) });
-          } catch {
-            s && !a && n({ kind: "failed" });
-          }
-        } while (s && a);
-      } finally {
-        o = !1;
-      }
-    };
-    l();
-    const u = t.subscribe(() => {
-      l();
-    });
-    return () => {
-      s = !1, u();
-    };
+    if (t)
+      return BI(t, n);
   }, [t]), !t) return null;
-  const i = e.kind === "ready" ? e.model.rows : [], r = e.kind === "loading" ? "Checking your agents…" : e.kind === "failed" ? "Agent status is unavailable." : e.model.supported ? i.length === 0 ? "No agents are working or waiting for you." : null : "Update Agent Code to see your agents here.";
+  const i = e.kind === "ready" ? e.model.rows : [], r = i.filter((o) => o.notification?.kind === "attention").length, s = e.kind === "loading" ? "Checking your agents…" : e.kind === "failed" ? "Agent status is unavailable." : e.model.supported ? i.length === 0 ? "No agents are working or waiting for you." : null : "Update Agent Code to see your agents here.";
   return /* @__PURE__ */ O.jsxs("aside", { className: "sg-agents", "aria-label": "Agent Code agents", children: [
-    /* @__PURE__ */ O.jsx("style", { children: OI }),
+    /* @__PURE__ */ O.jsx("style", { children: zI }),
     /* @__PURE__ */ O.jsxs("header", { className: "sg-agents-head", children: [
       /* @__PURE__ */ O.jsx("span", { children: "Agents" }),
-      i.length > 0 && /* @__PURE__ */ O.jsx("span", { className: "sg-agents-count", children: i.length })
+      /* @__PURE__ */ O.jsx(
+        "span",
+        {
+          className: "sg-agents-count",
+          "aria-live": "polite",
+          hidden: i.length === 0,
+          "aria-label": r ? `${r} need${r === 1 ? "s" : ""} you` : `${i.length} active`,
+          children: i.length
+        }
+      )
     ] }),
-    r ? /* @__PURE__ */ O.jsx("p", { className: "sg-agents-empty", children: r }) : /* @__PURE__ */ O.jsx("ul", { className: "sg-agents-list", children: i.map((s) => /* @__PURE__ */ O.jsxs("li", { className: `sg-agent${s.notification?.kind === "attention" ? " is-attention" : ""}`, children: [
-      /* @__PURE__ */ O.jsx("span", { className: `sg-agent-dot${s.working ? " is-working" : ""}`, "aria-hidden": "true" }),
+    s ? /* @__PURE__ */ O.jsx("p", { className: "sg-agents-empty", children: s }) : /* @__PURE__ */ O.jsx("ul", { className: "sg-agents-list", children: i.map((o) => /* @__PURE__ */ O.jsxs("li", { className: `sg-agent${o.notification?.kind === "attention" ? " is-attention" : ""}`, children: [
+      /* @__PURE__ */ O.jsx("span", { className: `sg-agent-dot${o.working ? " is-working" : ""}`, "aria-hidden": "true" }),
       /* @__PURE__ */ O.jsxs("span", { className: "sg-agent-text", children: [
-        /* @__PURE__ */ O.jsx("span", { className: "sg-agent-title", title: s.title, children: s.title }),
-        /* @__PURE__ */ O.jsxs("span", { className: "sg-agent-meta", children: [
-          s.project,
-          s.project && s.working ? " · " : "",
-          s.working ? "working" : ""
+        /* @__PURE__ */ O.jsx("span", { className: "sg-agent-title", title: o.title, children: o.title }),
+        /* @__PURE__ */ O.jsxs("span", { className: "sg-agent-meta", title: o.project, children: [
+          o.project,
+          o.project && o.working ? " · " : "",
+          o.working ? "working" : ""
         ] })
       ] }),
-      s.notification && /* @__PURE__ */ O.jsx("span", { className: `sg-agent-badge is-${s.notification.kind}`, children: s.notification.label })
-    ] }, s.id)) })
+      o.notification && /* @__PURE__ */ O.jsx("span", { className: `sg-agent-badge is-${o.notification.kind}`, children: o.notification.label })
+    ] }, o.id)) })
   ] });
 }
-const VI = '.sg-frame{--bg: var(--theme-canvas, #0f1216);--s1: var(--theme-surface, #171b21);--s2: var(--theme-surface-hi, #1f242c);--border: var(--theme-border, rgba(255, 255, 255, .09));--border-hi: var(--theme-border-hi, rgba(255, 255, 255, .2));--ink: var(--theme-ink, #e9edf2);--muted: var(--theme-muted, #9aa4b2);--gold: var(--theme-accent, #e3c56f);--gold-soft: var(--theme-accent-soft, rgba(227, 197, 111, .18));--gold-ink: var(--theme-accent-fg, #1a1206);--focus: var(--theme-focus-ring, var(--gold));--code: var(--theme-font-code, ui-monospace, "SF Mono", Menlo, monospace);width:max-content;margin:-1px;padding:14px;border-radius:inherit;background:var(--bg);color:var(--ink);font-family:var(--theme-app-font, ui-sans-serif, system-ui, -apple-system, sans-serif);user-select:none;-webkit-user-select:none}.sg-frame,.sg-frame *{box-sizing:border-box}.sg-frame-with-agents{display:flex;align-items:stretch;gap:14px}.sg-lan-with-agents{display:flex;align-items:stretch;gap:14px;width:max-content}';
+const WI = '.sg-frame{--bg: var(--theme-canvas, #0f1216);--s1: var(--theme-surface, #171b21);--s2: var(--theme-surface-hi, #1f242c);--border: var(--theme-border, rgba(255, 255, 255, .09));--border-hi: var(--theme-border-hi, rgba(255, 255, 255, .2));--ink: var(--theme-ink, #e9edf2);--muted: var(--theme-muted, #9aa4b2);--gold: var(--theme-accent, #e3c56f);--gold-soft: var(--theme-accent-soft, rgba(227, 197, 111, .18));--gold-ink: var(--theme-accent-fg, #1a1206);--focus: var(--theme-focus-ring, var(--gold));--code: var(--theme-font-code, ui-monospace, "SF Mono", Menlo, monospace);width:max-content;margin:-1px;padding:14px;border-radius:inherit;background:var(--bg);color:var(--ink);font-family:var(--theme-app-font, ui-sans-serif, system-ui, -apple-system, sans-serif);user-select:none;-webkit-user-select:none}.sg-frame,.sg-frame *{box-sizing:border-box}.sg-frame-with-agents{display:flex;align-items:stretch;gap:14px}.sg-lan-with-agents{display:flex;align-items:stretch;gap:14px;width:max-content}';
 export {
-  HI as A,
+  GI as A,
   ip as C,
   Ns as D,
-  zI as G,
+  VI as G,
   T2 as H,
   Ei as R,
   fI as S,
@@ -25759,12 +25777,12 @@ export {
   m1 as d,
   Sf as e,
   EI as f,
-  VI as g,
+  WI as g,
   mg as h,
   va as i,
   O as j,
   KE as k,
-  BI as l,
+  HI as l,
   Oe as r,
   hI as s
 };

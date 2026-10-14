@@ -51,8 +51,9 @@
 .sg-agent + .sg-agent { margin-top: 2px; }
 .sg-agent.is-attention { background: color-mix(in srgb, var(--ag-warning) 12%, transparent); }
 
-.sg-agent-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ag-line); }
-.sg-agent-dot.is-working { background: var(--ag-working); animation: sg-agent-pulse 1.6s ease-in-out infinite; }
+/* Idle agents (listed for a badge) get a visible hollow ring, not an empty slot. */
+.sg-agent-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--ag-muted); }
+.sg-agent-dot.is-working { box-shadow: none; background: var(--ag-working); animation: sg-agent-pulse 1.6s ease-in-out infinite; }
 @keyframes sg-agent-pulse { 50% { opacity: .35; } }
 
 .sg-agent-text { display: flex; flex-direction: column; min-width: 0; }
