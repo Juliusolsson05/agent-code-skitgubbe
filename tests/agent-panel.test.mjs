@@ -163,3 +163,23 @@ test('a nudge during a read triggers exactly one more read, which is painted', a
   stop()
   assert.deepEqual(states.map(s => s.model.rows[0].id), ['v0', 'v2'])
 })
+
+test('cleans up titles and badge words from the host before showing them', () => {
+  // Review of #7 (sg-b): the host sends `meta.title ?? null` untouched, so a
+  // padded or blank title reaches the panel as-is.
+  const { rows } = agentPanelModel([
+    row('blank', { title: '   ', activity: 'working' }),
+    row('padded', { title: '  Ship it  ', activity: 'working' }),
+    row('badge', { title: 'Badge', notification: { kind: 'output', label: '  NEW  ' } }),
+    row('empty-badge', { title: 'Empty badge', notification: { kind: 'output', label: '   ' } }),
+    row('long-badge', { title: 'Long badge', notification: { kind: 'attention', label: 'SOMETHINGVERYLONG' } }),
+  ])
+  const byId = Object.fromEntries(rows.map(r => [r.id, r]))
+  assert.equal(byId.blank.title, 'Claude agent')
+  assert.equal(byId.padded.title, 'Ship it')
+  assert.deepEqual(byId.badge.notification, { kind: 'output', label: 'NEW' })
+  // A badge with no word is no badge, and an idle agent without one is not listed.
+  assert.equal(byId['empty-badge'], undefined)
+  // Capped so a future long word cannot push the title out of the column.
+  assert.equal(byId['long-badge'].notification.label, 'SOMETHINGVER')
+})

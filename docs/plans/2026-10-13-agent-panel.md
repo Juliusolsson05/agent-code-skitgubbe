@@ -1,6 +1,6 @@
 # Skitgubbe: keep your Agent Code agents in view while you play
 
-Fixes #6. Status: approved 2026-10-13 (owner: "all defaults", full build). Merge needs explicit approval.
+Fixes #6. Status: implemented, PR #7; owner approved merging and a v0.2.0 release (2026-10-13).
 Branch `feat/agent-panel` · Worktree `../agent-code-skitgubbe-agent-panel` · Base `origin/main` @ `d6590f4`.
 
 The cross-repo contract (host projection, SDK fields, rulings on permissions) is
@@ -70,13 +70,33 @@ Jump-to-agent (needs a host focus API). Bot engine PR #5 (independent).
 
 ## Tasks
 
-- [ ] 1. Model + tests
-- [ ] 2. Panel + placement in both views + styles
-- [ ] 3. Manifest, SDK pin, README, build outputs
-- [ ] 4. Browser checks + screenshots; PR
+- [x] 1. Model + tests
+- [x] 2. Panel + placement in both views + styles
+- [x] 3. Manifest, SDK pin, README, build outputs
+- [x] 4. Browser checks + screenshots; PR
 
 ## Rulings
 
 - Ruling: the panel gets its own narrow `sessions` API type instead of widening
   `SkitgubbeApi` — the game code has no reason to read sessions, and the old comment
   asked that widening stay a deliberate host-power decision — cost if wrong: none.
+
+- Ruling: the panel's read loop lives in `src/agents/watchSessions.ts`, outside React — review
+  found a freeze in the inline version that nothing could test — cost if wrong: none.
+- Ruling: accept that the extra 232px column shrinks the whole modal on windows narrower than
+  ~1680px (the host scales oversized modals) — a collapsible column is a follow-up if it bothers
+  anyone — cost if wrong: slightly smaller cards on narrow windows.
+
+## Review (2026-10-13, one round, two Claude reviewers)
+
+| Finding | Verdict | Disposition |
+|---|---|---|
+| sg-a: read loop discards answers under steady nudges and can freeze on "Checking…" | valid | fixed in `5f43419` (`watchSessions.ts` + tests; the old `!stale` guard re-introduced fails) |
+| sg-a/sg-b: attention-before-NEW ordering not pinned | valid | fixed in `5f43419` |
+| sg-b: title and badge-label cleanup untested | valid | fixed in the final commit (two mutations re-run: caught) |
+| sg-a: deny-list of non-agent kinds is the shape the host warns about | valid trade-off | kept and documented in `5f43419` |
+| sg-a: untitled agents don't match Dispatch's names | valid, needs host | agent-code#1483; provider names fixed in `5f43419` |
+| sg-a: panel shrinks the table on narrow windows | valid trade-off | accepted (Rulings) |
+| sg-a: focus comment wrong, idle dot invisible, no live region | valid (nits) | fixed in `5f43419` |
+| sg-b: README "older Agent Code shows Update…" untrue with zero sessions | valid (nit) | README fixed |
+| sg-b: JSX message branches have no browser assertion | valid (minor) | not added; the states come from `agentPanelModel`/`watchSessions`, which are tested |

@@ -11,7 +11,7 @@ entries because the host installs from the source archive.
 
 Both commands show a narrow **Agents** column next to the table. It lists every Agent Code agent that is working or has a notification: its title, its project folder, and the same badge Dispatch shows (NEW, ACTION, QUESTION, ERROR …). Agents waiting on you come first. The list updates live and is read-only; open the agent in Agent Code to act on it. Shell terminals and idle agents are left out.
 
-It uses the `sessions.observe` permission (session titles, folders and working/notification status), which Agent Code asks for when you install or update. It needs Agent Code with SDK 0.11.0 support; an older Agent Code shows "Update Agent Code to see your agents here." Friends joining a LAN game from a plain browser see no agent column.
+It uses the `sessions.observe` permission (session titles, folders and working/notification status), which Agent Code asks for when you install or update. It needs Agent Code with SDK 0.11.0 support; an older Agent Code shows "Update Agent Code to see your agents here." once any session is open (with none open there is nothing to tell the versions apart, and the column just says no agents need you). Friends joining a LAN game from a plain browser see no agent column.
 
 ## Our table rules
 
