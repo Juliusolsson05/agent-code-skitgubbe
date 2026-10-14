@@ -30,3 +30,9 @@
   -webkit-user-select: none;
 }
 .sg-frame, .sg-frame * { box-sizing: border-box; }
+
+/* The frame becomes a row once the agent column joins it (#6). align-items:
+ * stretch gives the column the table's full height without either side
+ * knowing the other's size; the table keeps its fixed 1240px. */
+.sg-frame-with-agents { display: flex; align-items: stretch; gap: 14px; }
+.sg-lan-with-agents { display: flex; align-items: stretch; gap: 14px; width: max-content; }

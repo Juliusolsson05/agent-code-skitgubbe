@@ -1,23 +1,28 @@
-import { d as r } from "./runtime-XLX8az2X.js";
-import { k as a, j as s, l as u, G as c, g as m } from "./styles-D3XmAvgX.js";
-const i = "agent-code-skitgubbe-styles";
-function w() {
-  if (document.getElementById(i)) return;
+import { d as a } from "./runtime-XLX8az2X.js";
+import { k as r, j as s, l as u, G as c, A as m, g as w } from "./styles-BLR5Jw3i.js";
+const d = "agent-code-skitgubbe-styles";
+function l() {
+  if (document.getElementById(d)) return;
   const e = document.createElement("style");
-  e.id = i, e.textContent = m, document.head.append(e);
+  e.id = d, e.textContent = w, document.head.append(e);
 }
-function l(e, d) {
-  w();
-  const n = new c(), t = () => n.unlock();
-  window.addEventListener("keydown", t), window.addEventListener("pointerdown", t);
-  const o = a(e);
-  return o.render(/* @__PURE__ */ s.jsx("div", { className: "sg-frame", children: /* @__PURE__ */ s.jsx(u, { api: d.api, audio: n }) })), () => {
-    window.removeEventListener("keydown", t), window.removeEventListener("pointerdown", t), n.dispose(), queueMicrotask(() => o.unmount());
+function p(e, o) {
+  l();
+  const t = new c(), n = () => t.unlock();
+  window.addEventListener("keydown", n), window.addEventListener("pointerdown", n);
+  const i = r(e);
+  return i.render(
+    /* @__PURE__ */ s.jsxs("div", { className: "sg-frame sg-frame-with-agents", children: [
+      /* @__PURE__ */ s.jsx(u, { api: o.api, audio: t }),
+      /* @__PURE__ */ s.jsx(m, { sessions: o.api.sessions })
+    ] })
+  ), () => {
+    window.removeEventListener("keydown", n), window.removeEventListener("pointerdown", n), t.dispose(), queueMicrotask(() => i.unmount());
   };
 }
-const f = r({
-  mount: l
+const k = a({
+  mount: p
 });
 export {
-  f as default
+  k as default
 };

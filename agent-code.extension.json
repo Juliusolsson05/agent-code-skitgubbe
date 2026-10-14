@@ -2,7 +2,7 @@
   "id": "skitgubbe",
   "name": "Skitgubbe",
   "description": "Skitgubbe on a 3D table, against bots or with friends over LAN.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "apiVersion": 2,
   "entry": "dist/runtime.js",
   "activationEvents": [
@@ -62,6 +62,7 @@
     "service.run",
     "service.transport",
     "net.listen",
-    "net.connect"
+    "net.connect",
+    "sessions.observe"
   ]
 }

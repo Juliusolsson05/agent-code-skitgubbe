@@ -1,6 +1,7 @@
 import type { ViewContext } from 'agent-code-extension-api'
 import { createRoot } from 'react-dom/client'
 
+import { AgentPanel } from '../agents/AgentPanel'
 import { GameAudio } from '../game/audio'
 import { Skitgubbe } from '../game/Skitgubbe'
 import styles from '../styles.css?inline'
@@ -28,7 +29,15 @@ export function mountSkitgubbe(element: HTMLElement, context: ViewContext): () =
   window.addEventListener('pointerdown', unlock)
 
   const root = createRoot(element)
-  root.render(<div className="sg-frame"><Skitgubbe api={context.api} audio={audio} /></div>)
+  // The agent column sits INSIDE .sg-frame so the host measures one surface:
+  // it sizes (and if needed scales) the modal from the frame's width, and a
+  // second top-level box would be laid out outside that measurement.
+  root.render(
+    <div className="sg-frame sg-frame-with-agents">
+      <Skitgubbe api={context.api} audio={audio} />
+      <AgentPanel sessions={context.api.sessions} />
+    </div>,
+  )
 
   return () => {
     window.removeEventListener('keydown', unlock)
